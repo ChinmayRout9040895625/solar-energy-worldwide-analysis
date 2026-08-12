@@ -61,7 +61,7 @@ def ensure_state_file(project_root: Path) -> Path:
         return path
     recovered = _extract(text, INTENT_BEGIN, INTENT_END) or INTENT_PLACEHOLDER
     path.write_text(
-        TEMPLATE.replace(INTENT_PLACEHOLDER, recovered), encoding="utf-8"
+        TEMPLATE.replace(INTENT_PLACEHOLDER, recovered, 1), encoding="utf-8"
     )
     return path
 
