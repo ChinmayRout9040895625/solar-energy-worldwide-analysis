@@ -12,6 +12,7 @@ from pathlib import Path
 MAX_COLUMNS_SHOWN = 20
 MAX_FILES_SHOWN = 15
 MAX_MEMORY_NOTES = 12
+MAX_DESCRIPTION_CHARS = 120
 ARTIFACT_DIRS = ("analysis", "output")
 
 
@@ -36,17 +37,19 @@ def _data_schema(root: Path) -> str | None:
 
 
 def _artifacts(root: Path) -> str | None:
-    lines: list[str] = []
+    all_files: list[Path] = []
     for name in ARTIFACT_DIRS:
         directory = root / name
         if not directory.is_dir():
             continue
-        files = sorted(p for p in directory.rglob("*") if p.is_file())
-        for path in files[:MAX_FILES_SHOWN]:
-            lines.append(f"- {path.relative_to(root).as_posix()}")
-        if len(files) > MAX_FILES_SHOWN:
-            lines.append(f"- (+{len(files) - MAX_FILES_SHOWN} more in {name}/)")
-    return "\n".join(lines) if lines else None
+        all_files.extend(sorted(p for p in directory.rglob("*") if p.is_file()))
+    if not all_files:
+        return None
+    shown = all_files[:MAX_FILES_SHOWN]
+    lines = [f"- {path.relative_to(root).as_posix()}" for path in shown]
+    if len(all_files) > MAX_FILES_SHOWN:
+        lines.append(f"- (+{len(all_files) - MAX_FILES_SHOWN} more)")
+    return "\n".join(lines)
 
 
 def _git(root: Path) -> str | None:
@@ -74,7 +77,10 @@ def _description(path: Path) -> str:
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             stripped = line.strip()
             if stripped:
-                return stripped.lstrip("# ").strip()
+                desc = stripped.lstrip("# ").strip()
+                if len(desc) > MAX_DESCRIPTION_CHARS:
+                    desc = desc[:MAX_DESCRIPTION_CHARS].rstrip() + "…"
+                return desc
     except OSError:
         pass
     return "(empty)"
