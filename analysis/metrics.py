@@ -32,3 +32,15 @@ def payback_band_counts(df: pd.DataFrame) -> dict[str, int]:
     bands = df["Payback_Period_Years"].map(payback_risk_band)
     counts = bands.value_counts().to_dict()
     return {band: int(counts.get(band, 0)) for band in BANDS}
+
+
+def regional_mean_roi(df: pd.DataFrame) -> dict[str, float]:
+    """Mean ROI percentage per region, unrounded."""
+    return df.groupby("Region")["ROI_Percentage"].mean().to_dict()
+
+
+def regional_roi_rank(df: pd.DataFrame) -> dict[str, int]:
+    """1-based dense rank of regions by mean ROI, highest first."""
+    means = df.groupby("Region")["ROI_Percentage"].mean()
+    ranks = means.rank(method="dense", ascending=False).astype(int)
+    return ranks.to_dict()

@@ -52,3 +52,44 @@ def test_band_counts_sum_to_row_count(real):
 def test_band_counts_always_include_all_three_keys():
     synthetic = pd.DataFrame({"Payback_Period_Years": [6.0, 6.5]})
     assert payback_band_counts(synthetic) == {"Low": 2, "Medium": 0, "High": 0}
+
+
+from analysis.metrics import regional_mean_roi, regional_roi_rank
+
+
+def test_rank_matches_verified_order(real):
+    assert regional_roi_rank(real) == {
+        "Middle East": 1,
+        "Africa": 2,
+        "Oceania": 3,
+        "North America": 4,
+        "Asia": 5,
+        "South America": 6,
+        "Europe": 7,
+    }
+
+
+def test_mean_roi_matches_verified_values(real):
+    means = regional_mean_roi(real)
+    assert math.isclose(means["Middle East"], 14.5, abs_tol=1e-9)
+    assert math.isclose(means["Africa"], 14.266666666666667, abs_tol=1e-9)
+    assert math.isclose(means["Europe"], 8.85, abs_tol=1e-9)
+
+
+def test_rank_covers_every_region_exactly_once(real):
+    ranks = regional_roi_rank(real)
+    assert len(ranks) == real["Region"].nunique() == 7
+    assert sorted(ranks.values()) == [1, 2, 3, 4, 5, 6, 7]
+
+
+def test_dense_rank_shares_rank_on_tie_without_skipping():
+    synthetic = pd.DataFrame(
+        {
+            "Region": ["A", "B", "C"],
+            "ROI_Percentage": [10.0, 10.0, 5.0],
+        }
+    )
+    ranks = regional_roi_rank(synthetic)
+    assert ranks["A"] == 1
+    assert ranks["B"] == 1
+    assert ranks["C"] == 2  # dense: no gap after the tie
