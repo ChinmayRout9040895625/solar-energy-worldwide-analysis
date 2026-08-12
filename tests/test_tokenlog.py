@@ -28,3 +28,8 @@ def test_append_never_raises_on_unwritable_path(tmp_path):
     blocker = tmp_path / "docs"
     blocker.write_text("I am a file, not a directory", encoding="utf-8")
     append_entry(tmp_path, 100, ["intent"])
+
+
+def test_append_never_raises_on_non_serializable_blocks(tmp_path):
+    # Pass a set (non-serializable) inside blocks to trigger TypeError in json.dumps
+    append_entry(tmp_path, 100, [{"non_serializable": set()}])  # type: ignore
