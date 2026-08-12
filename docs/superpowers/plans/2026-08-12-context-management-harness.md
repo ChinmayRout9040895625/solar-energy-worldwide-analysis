@@ -1683,7 +1683,7 @@ Keep this file under 60 lines. It is loaded on every single session, so every li
 ```markdown
 # Solar Energy Worldwide Analysis
 
-Analysis of `solar_energy_worldwide.csv` (47 cities, 17 columns) producing
+Analysis of `solar_energy_worldwide.csv` (48 cities, 17 columns) producing
 viability scoring, ROI comparison, regional breakdowns, and a dashboard.
 
 ## Response contract

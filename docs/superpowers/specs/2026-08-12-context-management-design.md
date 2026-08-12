@@ -8,7 +8,7 @@
 
 Build a project-local, token-optimized context management system for this workspace. The system keeps a self-refreshing context file that is auto-injected at session start, routes high-reasoning work to Opus 5 and mechanical work to Sonnet subagents, and enforces terse response output. It is built as a self-contained folder that can be copied to future projects.
 
-The system is infrastructure. The project deliverable it supports is a Python analysis of `solar_energy_worldwide.csv` (47 cities, 17 columns) plus an interactive dashboard covering viability scoring, ROI comparison, and regional breakdowns.
+The system is infrastructure. The project deliverable it supports is a Python analysis of `solar_energy_worldwide.csv` (48 cities, 17 columns) plus an interactive dashboard covering viability scoring, ROI comparison, and regional breakdowns.
 
 ## Grounding
 
@@ -159,7 +159,7 @@ Live verification with `claude --debug` to confirm the injected block actually l
 
 ## Open risk
 
-On a 47-row dataset, the ~800-token per-session injection may cost more than it saves. `token_log.jsonl` exists specifically so this is measurable rather than assumed. The system's value is expected to come from workflow discipline and portability rather than raw token savings on this particular dataset. If the log shows the overhead is not earning its place, the config kill switch is the exit.
+On a 48-row dataset, the ~800-token per-session injection may cost more than it saves. `token_log.jsonl` exists specifically so this is measurable rather than assumed. The system's value is expected to come from workflow discipline and portability rather than raw token savings on this particular dataset. If the log shows the overhead is not earning its place, the config kill switch is the exit.
 
 ## Out of scope
 
