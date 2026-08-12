@@ -18,6 +18,11 @@ DEFAULT_CONFIG = {
     "delegation": {"enabled": True, "min_task_size": "multi-step"},
     "checkpoint_gate": True,
     "token_logging": True,
+    "preserve_compact": True,
+    # Repo-relative dirs whose files (at any depth) count as work, plus globs
+    # matched at the repo root only, non-recursively.
+    "work_dirs": ["analysis", "output"],
+    "work_globs": ["*.py", "*.ipynb"],
 }
 
 

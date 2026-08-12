@@ -3,44 +3,36 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from lib.config import load_config
+from lib.hookio import read_payload, resolve_root
 from lib.state import read_intent
 
 INSTRUCTION = (
     "When summarizing, preserve the injected project state block verbatim and keep "
     "the intent recorded in docs/STATE.md. Prior intent was also saved to "
-    "docs/memory/ as a pre-compact note."
+    "docs/memory/precompact/ as a pre-compact note."
 )
 
 
-def _resolve_root(payload: dict) -> Path:
-    for candidate in (os.environ.get("CLAUDE_PROJECT_DIR"), payload.get("cwd")):
-        if candidate:
-            return Path(candidate)
-    return Path.cwd()
-
-
 def main() -> None:
-    try:
-        raw = sys.stdin.read()
-    except OSError:
-        raw = ""
-    try:
-        payload = json.loads(raw) if raw.strip() else {}
-    except ValueError:
-        payload = {}
+    payload = read_payload()
+    root = resolve_root(payload)
+    if not load_config(root).get("preserve_compact", True):
+        return
 
-    root = _resolve_root(payload)
     intent = read_intent(root)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
-    note = root / "docs" / "memory" / f"pre-compact-{stamp}.md"
+    # A subdirectory, not docs/memory/ itself: the memory-index glob is
+    # non-recursive, so these machine-written notes stay out of the injected
+    # index instead of crowding out the human-written ones.
+    note = root / "docs" / "memory" / "precompact" / f"pre-compact-{stamp}.md"
     note.parent.mkdir(parents=True, exist_ok=True)
     note.write_text(
         f"# Pre-compact snapshot {stamp}\n\n"

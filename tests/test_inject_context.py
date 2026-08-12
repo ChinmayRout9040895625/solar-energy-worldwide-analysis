@@ -105,6 +105,88 @@ def test_all_blocks_disabled_yields_empty_context(tmp_path):
     assert json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"] == ""
 
 
+def _disable_all_blocks(tmp_path):
+    cfg = tmp_path / ".claude"
+    cfg.mkdir(exist_ok=True)
+    (cfg / "context.config.json").write_text(
+        json.dumps({"blocks": dict.fromkeys(
+            ["data_schema", "artifacts", "git", "intent", "memory_index"], False)}),
+        encoding="utf-8",
+    )
+
+
+def test_kill_switch_leaves_state_file_byte_identical(tmp_path):
+    _make_project(tmp_path)
+    run_hook(tmp_path)  # prime a real state file
+    before = state_path(tmp_path).read_bytes()
+    _disable_all_blocks(tmp_path)
+    result = run_hook(tmp_path)
+    assert result.returncode == 0
+    assert json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"] == ""
+    assert state_path(tmp_path).read_bytes() == before
+
+
+def test_kill_switch_appends_no_token_log_entry(tmp_path):
+    _make_project(tmp_path)
+    _disable_all_blocks(tmp_path)
+    run_hook(tmp_path)
+    assert not (tmp_path / "docs" / "token_log.jsonl").exists()
+
+
+def test_compact_source_emits_block_without_rewriting_facts(tmp_path):
+    _make_project(tmp_path)
+    run_hook(tmp_path)
+    path = state_path(tmp_path)
+    before_mtime = path.stat().st_mtime
+    before_bytes = path.read_bytes()
+    (tmp_path / "extra.csv").write_text("A,B\n1,2\n", encoding="utf-8")
+    result = run_hook(
+        tmp_path,
+        payload={"hook_event_name": "SessionStart", "cwd": str(tmp_path),
+                 "source": "compact"},
+    )
+    assert result.returncode == 0
+    context = json.loads(result.stdout)["hookSpecificOutput"]["additionalContext"]
+    assert "extra.csv" in context  # block still built and emitted
+    assert path.read_bytes() == before_bytes
+    assert path.stat().st_mtime == before_mtime
+
+
+def test_resume_source_does_not_rewrite_facts(tmp_path):
+    _make_project(tmp_path)
+    run_hook(tmp_path)
+    path = state_path(tmp_path)
+    before = path.read_bytes()
+    (tmp_path / "extra.csv").write_text("A,B\n1,2\n", encoding="utf-8")
+    run_hook(
+        tmp_path,
+        payload={"hook_event_name": "SessionStart", "cwd": str(tmp_path),
+                 "source": "resume"},
+    )
+    assert path.read_bytes() == before
+
+
+def test_startup_source_does_rewrite_facts(tmp_path):
+    _make_project(tmp_path)
+    result = run_hook(
+        tmp_path,
+        payload={"hook_event_name": "SessionStart", "cwd": str(tmp_path),
+                 "source": "startup"},
+    )
+    assert result.returncode == 0
+    assert "solar.csv" in state_path(tmp_path).read_text(encoding="utf-8")
+
+
+def test_unknown_source_behaves_like_startup(tmp_path):
+    _make_project(tmp_path)
+    run_hook(
+        tmp_path,
+        payload={"hook_event_name": "SessionStart", "cwd": str(tmp_path),
+                 "source": "something_new"},
+    )
+    assert "solar.csv" in state_path(tmp_path).read_text(encoding="utf-8")
+
+
 def test_writes_token_log_entry(tmp_path):
     _make_project(tmp_path)
     run_hook(tmp_path)

@@ -39,9 +39,37 @@ def test_writes_precompact_note_containing_intent(tmp_path):
     _seed_intent(tmp_path)
     result = run_hook(tmp_path)
     assert result.returncode == 0
-    notes = list((tmp_path / "docs" / "memory").glob("pre-compact-*.md"))
+    notes = list((tmp_path / "docs" / "memory" / "precompact").glob("pre-compact-*.md"))
     assert len(notes) == 1
     assert "finish ROI chart" in notes[0].read_text(encoding="utf-8")
+
+
+def test_note_is_not_written_directly_into_memory_dir(tmp_path):
+    _seed_intent(tmp_path)
+    run_hook(tmp_path)
+    assert list((tmp_path / "docs" / "memory").glob("*.md")) == []
+
+
+def test_precompact_notes_absent_from_injected_memory_index(tmp_path):
+    _seed_intent(tmp_path)
+    run_hook(tmp_path)
+    from lib.facts import collect_facts
+
+    facts = collect_facts(tmp_path, {"memory_index": True})
+    assert "pre-compact" not in facts.get("memory_index", "")
+
+
+def test_disabled_by_config_writes_nothing_and_prints_nothing(tmp_path):
+    _seed_intent(tmp_path)
+    cfg = tmp_path / ".claude"
+    cfg.mkdir(exist_ok=True)
+    (cfg / "context.config.json").write_text(
+        json.dumps({"preserve_compact": False}), encoding="utf-8"
+    )
+    result = run_hook(tmp_path)
+    assert result.returncode == 0
+    assert result.stdout.strip() == ""
+    assert not (tmp_path / "docs" / "memory" / "precompact").exists()
 
 
 def test_emits_preservation_instruction(tmp_path):

@@ -7,6 +7,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".claude" / "hooks"
 from lib.config import DEFAULT_CONFIG, load_config
 
 
+def test_shipped_config_matches_defaults_key_for_key():
+    repo = Path(__file__).resolve().parents[1]
+    shipped = json.loads(
+        (repo / ".claude" / "context.config.json").read_text(encoding="utf-8")
+    )
+    assert set(shipped) == set(DEFAULT_CONFIG)
+    for key, value in DEFAULT_CONFIG.items():
+        if isinstance(value, dict):
+            assert set(shipped[key]) == set(value)
+
+
 def test_missing_config_returns_defaults(tmp_path):
     assert load_config(tmp_path) == DEFAULT_CONFIG
 

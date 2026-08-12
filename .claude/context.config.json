@@ -10,5 +10,8 @@
   },
   "delegation": { "enabled": true, "min_task_size": "multi-step" },
   "checkpoint_gate": true,
-  "token_logging": true
+  "token_logging": true,
+  "preserve_compact": true,
+  "work_dirs": ["analysis", "output"],
+  "work_globs": ["*.py", "*.ipynb"]
 }

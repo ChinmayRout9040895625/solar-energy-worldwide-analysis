@@ -6,7 +6,6 @@ Fails open. Any exception results in no output and exit code 0.
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -15,10 +14,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.budget import estimate_tokens, truncate_to_budget
 from lib.config import load_config
 from lib.facts import collect_facts
+from lib.hookio import read_payload, resolve_root
 from lib.state import read_intent, write_facts
 from lib.tokenlog import append_entry
 
 FACTS_ORDER = ("data_schema", "artifacts", "git")
+BLOCK_NAMES = FACTS_ORDER + ("intent", "memory_index")
 HEADINGS = {
     "data_schema": "Data",
     "artifacts": "Artifacts",
@@ -28,21 +29,22 @@ HEADINGS = {
 }
 
 
-def _resolve_root(payload: dict) -> Path:
-    for candidate in (os.environ.get("CLAUDE_PROJECT_DIR"), payload.get("cwd")):
-        if candidate:
-            return Path(candidate)
-    return Path.cwd()
-
-
 def _section(name: str, body: str) -> str:
     return f"### {HEADINGS[name]}\n{body}"
 
 
-def build_block(project_root: Path, config: dict) -> tuple[str, list[str]]:
-    """Return (block_markdown, included_block_names)."""
+def build_block(
+    project_root: Path, config: dict, persist_facts: bool = True
+) -> tuple[str, list[str]]:
+    """Return (block_markdown, included_block_names).
+
+    With every block disabled this is a genuine no-op: no collector runs, no
+    git subprocess is spawned, and STATE.md is left untouched.
+    """
     blocks = config.get("blocks", {})
     budget = config.get("token_budget", {})
+    if not any(blocks.get(name, True) for name in BLOCK_NAMES):
+        return "", []
     facts = collect_facts(project_root, blocks)
     included: list[str] = []
     parts: list[str] = []
@@ -73,8 +75,10 @@ def build_block(project_root: Path, config: dict) -> tuple[str, list[str]]:
         )
         included.append("memory_index")
 
-    # Persist the facts half so the on-disk file stays true.
-    write_facts(project_root, facts_md or "(no facts collected)")
+    # Persist the facts half so the on-disk file stays true — but only when the
+    # facts blocks are actually enabled and the session source permits a write.
+    if persist_facts and any(blocks.get(name, True) for name in FACTS_ORDER):
+        write_facts(project_root, facts_md or "(no facts collected)")
 
     if not parts:
         return "", included
@@ -84,18 +88,20 @@ def build_block(project_root: Path, config: dict) -> tuple[str, list[str]]:
 
 
 def main() -> None:
-    try:
-        raw = sys.stdin.read()
-    except OSError:
-        raw = ""
-    try:
-        payload = json.loads(raw) if raw.strip() else {}
-    except ValueError:
-        payload = {}
-
-    root = _resolve_root(payload)
+    payload = read_payload()
+    root = resolve_root(payload)
     config = load_config(root)
-    block, included = build_block(root, config)
+
+    # A resume or a mid-session compaction must not touch STATE.md: rewriting it
+    # bumps its mtime to now, which would retroactively make every work file
+    # written earlier this session look older than STATE.md and erase the
+    # checkpoint gate's evidence. The block is still emitted — the model needs
+    # its context back after a compaction. Anything unexpected behaves as
+    # startup, the conservative default.
+    source = payload.get("source")
+    persist_facts = source not in ("resume", "compact")
+
+    block, included = build_block(root, config, persist_facts=persist_facts)
 
     if config.get("token_logging", True) and block:
         append_entry(root, estimate_tokens(block), included)
