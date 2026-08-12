@@ -5,3 +5,5 @@ __pycache__/
 docs/token_log.jsonl
 docs/memory/precompact/
 docs/STATE.md
+
+output/data.json
