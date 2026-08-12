@@ -1062,10 +1062,13 @@ def reconcile(df: pd.DataFrame, payload: dict) -> None:
             f"but the source has {len(df)} rows"
         )
 
+    # NOTE: production is checked separately per level. `country_records`
+    # emits `mean_production_kwh`, not `production_kwh`, so a single loop
+    # over both levels would KeyError on the country pass. See the shipped
+    # implementation for how countries reconcile production.
     checks = (
         ("co2_tons", "CO2_Reduction_Tons_per_Year", 0.02),
         ("installations", "Solar_Installations_Count", 0.5),
-        ("production_kwh", "Avg_Annual_Production_kWh", 0.5),
     )
     for level in ("regions", "countries"):
         for key, column, tolerance in checks:
