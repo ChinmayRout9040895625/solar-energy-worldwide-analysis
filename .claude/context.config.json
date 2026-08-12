@@ -1,0 +1,14 @@
+{
+  "verbosity": "lean",
+  "token_budget": { "total": 800, "facts": 400, "intent": 300, "memory_index": 100 },
+  "blocks": {
+    "data_schema": true,
+    "artifacts": true,
+    "git": true,
+    "intent": true,
+    "memory_index": true
+  },
+  "delegation": { "enabled": true, "min_task_size": "multi-step" },
+  "checkpoint_gate": true,
+  "token_logging": true
+}
