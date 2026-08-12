@@ -1,0 +1,17 @@
+{
+  "model": "opus",
+  "effortLevel": "high",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/inject_context.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
