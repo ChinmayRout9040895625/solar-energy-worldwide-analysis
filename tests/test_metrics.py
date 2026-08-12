@@ -93,3 +93,84 @@ def test_dense_rank_shares_rank_on_tie_without_skipping():
     assert ranks["A"] == 1
     assert ranks["B"] == 1
     assert ranks["C"] == 2  # dense: no gap after the tie
+
+
+from analysis.metrics import (
+    MIN_CITIES_FOR_CONSISTENCY,
+    SMALL_SAMPLE_MAX,
+    cities_per_region,
+    production_consistency,
+    small_sample_regions,
+)
+
+
+def test_consistency_matches_verified_values(real):
+    cons = production_consistency(real)
+    assert math.isclose(cons["Africa"], 0.9343, abs_tol=5e-5)
+    assert math.isclose(cons["Asia"], 0.8264, abs_tol=5e-5)
+    assert math.isclose(cons["Europe"], 0.7454, abs_tol=5e-5)
+    assert math.isclose(cons["North America"], 0.7616, abs_tol=5e-5)
+    assert math.isclose(cons["Oceania"], 0.9020, abs_tol=5e-5)
+    assert math.isclose(cons["South America"], 0.8412, abs_tol=5e-5)
+
+
+def test_single_city_region_is_none_not_one(real):
+    # Middle East has exactly one city. Zero variance must not read as
+    # perfect consistency.
+    assert production_consistency(real)["Middle East"] is None
+
+
+def test_every_region_appears_in_consistency(real):
+    assert set(production_consistency(real)) == set(real["Region"].unique())
+
+
+def test_two_city_region_is_none():
+    synthetic = pd.DataFrame(
+        {
+            "Region": ["A", "A"],
+            "Avg_Annual_Production_kWh": [10000, 12000],
+        }
+    )
+    assert production_consistency(synthetic)["A"] is None
+
+
+def test_three_city_region_is_computed():
+    synthetic = pd.DataFrame(
+        {
+            "Region": ["A", "A", "A"],
+            "Avg_Annual_Production_kWh": [10000, 10000, 10000],
+        }
+    )
+    # Zero spread across 3 cities is genuine perfect consistency.
+    assert production_consistency(synthetic)["A"] == 1.0
+
+
+def test_consistency_is_clamped_to_zero_floor():
+    # Extreme spread drives 1 - cv negative; it must clamp, not go below 0.
+    synthetic = pd.DataFrame(
+        {
+            "Region": ["A", "A", "A"],
+            "Avg_Annual_Production_kWh": [1, 1, 100000],
+        }
+    )
+    assert production_consistency(synthetic)["A"] == 0.0
+
+
+def test_small_sample_regions_match_real_data(real):
+    assert small_sample_regions(real) == {"Africa", "Oceania", "Middle East"}
+
+
+def test_cities_per_region_matches_real_data(real):
+    assert cities_per_region(real) == {
+        "Europe": 16,
+        "Asia": 12,
+        "North America": 8,
+        "South America": 5,
+        "Oceania": 3,
+        "Africa": 3,
+        "Middle East": 1,
+    }
+
+
+def test_threshold_constants_are_ordered():
+    assert MIN_CITIES_FOR_CONSISTENCY < SMALL_SAMPLE_MAX
