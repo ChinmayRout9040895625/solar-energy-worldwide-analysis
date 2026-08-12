@@ -750,7 +750,13 @@ def country_records(df: pd.DataFrame) -> list[dict]:
                 "installations": int(group["Solar_Installations_Count"].sum()),
             }
         )
-    return sorted(records, key=lambda r: (-r["co2_tons"], r["country"]))
+    # Sort on the UNROUNDED total: the Global Constraints forbid ranking on
+    # a rounded value. The helper key is removed before returning so the
+    # emitted key set stays exactly as Task 5 asserts it.
+    records.sort(key=lambda r: (-r["_co2_unrounded"], r["country"]))
+    for record in records:
+        del record["_co2_unrounded"]
+    return records
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
