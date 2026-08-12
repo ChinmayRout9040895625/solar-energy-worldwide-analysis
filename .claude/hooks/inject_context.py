@@ -29,7 +29,7 @@ HEADINGS = {
 
 
 def _resolve_root(payload: dict) -> Path:
-    for candidate in (payload.get("cwd"), os.environ.get("CLAUDE_PROJECT_DIR")):
+    for candidate in (os.environ.get("CLAUDE_PROJECT_DIR"), payload.get("cwd")):
         if candidate:
             return Path(candidate)
     return Path.cwd()
@@ -47,6 +47,16 @@ def build_block(project_root: Path, config: dict) -> tuple[str, list[str]]:
     included: list[str] = []
     parts: list[str] = []
 
+    # Intent goes first: a total-budget truncation (which cuts from the end)
+    # must sacrifice regenerable facts before it touches the model's own
+    # unrecoverable notes.
+    if blocks.get("intent", True):
+        intent = read_intent(project_root)
+        parts.append(
+            truncate_to_budget(_section("intent", intent), budget.get("intent", 300))
+        )
+        included.append("intent")
+
     facts_md = "\n\n".join(
         _section(name, facts[name]) for name in FACTS_ORDER if name in facts
     )
@@ -62,13 +72,6 @@ def build_block(project_root: Path, config: dict) -> tuple[str, list[str]]:
             )
         )
         included.append("memory_index")
-
-    if blocks.get("intent", True):
-        intent = read_intent(project_root)
-        parts.append(
-            truncate_to_budget(_section("intent", intent), budget.get("intent", 300))
-        )
-        included.append("intent")
 
     # Persist the facts half so the on-disk file stays true.
     write_facts(project_root, facts_md or "(no facts collected)")
