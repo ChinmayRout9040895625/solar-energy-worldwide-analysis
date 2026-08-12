@@ -23,6 +23,17 @@
           }
         ]
       }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/preserve_compact.py\"",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
