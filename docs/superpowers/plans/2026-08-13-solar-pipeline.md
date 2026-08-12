@@ -756,7 +756,7 @@ def country_records(df: pd.DataFrame) -> list[dict]:
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_aggregate.py -v`
-Expected: 21 passed
+Expected: 19 passed
 
 - [ ] **Step 5: Run the whole suite to confirm nothing regressed**
 
@@ -1177,7 +1177,7 @@ Expected: `BUILD FAILED: source CSV not found: missing.csv` on stderr, exit code
 - [ ] **Step 7: Run the whole suite**
 
 Run: `python -m pytest tests/ -q`
-Expected: all tests pass — the 61 pre-existing harness tests plus the 57 added by this plan
+Expected: all tests pass — the 61 pre-existing harness tests plus the 55 added by this plan
 
 - [ ] **Step 8: Commit**
 
