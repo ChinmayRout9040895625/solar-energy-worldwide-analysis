@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.superpowers/
+docs/token_log.jsonl
+docs/memory/pre-compact-*.md
