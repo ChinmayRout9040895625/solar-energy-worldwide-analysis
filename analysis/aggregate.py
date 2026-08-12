@@ -95,6 +95,7 @@ def country_records(df: pd.DataFrame) -> list[dict]:
     """One record per country, largest CO2 contribution first."""
     records = []
     for country, group in df.groupby("Country"):
+        co2_unrounded = float(group["CO2_Reduction_Tons_per_Year"].sum())
         records.append(
             {
                 "country": str(country),
@@ -104,8 +105,44 @@ def country_records(df: pd.DataFrame) -> list[dict]:
                 "mean_production_kwh": _round2(
                     group["Avg_Annual_Production_kWh"].mean()
                 ),
-                "co2_tons": _round2(group["CO2_Reduction_Tons_per_Year"].sum()),
+                "co2_tons": _round2(co2_unrounded),
                 "installations": int(group["Solar_Installations_Count"].sum()),
+                "_co2_unrounded": co2_unrounded,
             }
         )
-    return sorted(records, key=lambda r: (-r["co2_tons"], r["country"]))
+    records.sort(key=lambda r: (-r["_co2_unrounded"], r["country"]))
+    for record in records:
+        del record["_co2_unrounded"]
+    return records
+
+
+def region_totals_unrounded(df: pd.DataFrame) -> dict[str, dict[str, float]]:
+    """Unrounded per-region group sums, keyed by region name.
+
+    Used for exact reconciliation testing — never round these before
+    summing or comparing against the raw CSV totals.
+    """
+    result: dict[str, dict[str, float]] = {}
+    for region, group in df.groupby("Region"):
+        result[str(region)] = {
+            "co2_tons": float(group["CO2_Reduction_Tons_per_Year"].sum()),
+            "installations": int(group["Solar_Installations_Count"].sum()),
+            "production_kwh": int(group["Avg_Annual_Production_kWh"].sum()),
+        }
+    return result
+
+
+def country_totals_unrounded(df: pd.DataFrame) -> dict[str, dict[str, float]]:
+    """Unrounded per-country group sums, keyed by country name.
+
+    Used for exact reconciliation testing — never round these before
+    summing or comparing against the raw CSV totals.
+    """
+    result: dict[str, dict[str, float]] = {}
+    for country, group in df.groupby("Country"):
+        result[str(country)] = {
+            "co2_tons": float(group["CO2_Reduction_Tons_per_Year"].sum()),
+            "installations": int(group["Solar_Installations_Count"].sum()),
+            "production_kwh": int(group["Avg_Annual_Production_kWh"].sum()),
+        }
+    return result

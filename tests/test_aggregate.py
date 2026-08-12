@@ -10,7 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from analysis.aggregate import (
     city_records,
     country_records,
+    country_totals_unrounded,
     region_records,
+    region_totals_unrounded,
     totals,
 )
 
@@ -49,8 +51,10 @@ def test_top_three_cities_by_roi(real):
 
 
 def test_region_co2_reconciles_to_raw_total(real):
-    rolled = sum(r["co2_tons"] for r in region_records(real))
-    assert math.isclose(rolled, real["CO2_Reduction_Tons_per_Year"].sum(), abs_tol=0.02)
+    rolled = sum(v["co2_tons"] for v in region_totals_unrounded(real).values())
+    assert math.isclose(
+        rolled, real["CO2_Reduction_Tons_per_Year"].sum(), abs_tol=1e-9
+    )
 
 
 def test_region_installations_reconcile_to_raw_total(real):
@@ -68,8 +72,30 @@ def test_region_city_counts_sum_to_48(real):
 
 
 def test_country_co2_reconciles_to_raw_total(real):
-    rolled = sum(r["co2_tons"] for r in country_records(real))
-    assert math.isclose(rolled, real["CO2_Reduction_Tons_per_Year"].sum(), abs_tol=0.02)
+    rolled = sum(v["co2_tons"] for v in country_totals_unrounded(real).values())
+    assert math.isclose(
+        rolled, real["CO2_Reduction_Tons_per_Year"].sum(), abs_tol=1e-9
+    )
+
+
+def test_rounded_co2_stays_within_rounding_bound_of_unrounded_sum(real):
+    region_unrounded = region_totals_unrounded(real)
+    regions = region_records(real)
+    region_bound = len(regions) * 0.005
+    assert math.isclose(
+        sum(r["co2_tons"] for r in regions),
+        sum(v["co2_tons"] for v in region_unrounded.values()),
+        abs_tol=region_bound,
+    )
+
+    country_unrounded = country_totals_unrounded(real)
+    countries = country_records(real)
+    country_bound = len(countries) * 0.005
+    assert math.isclose(
+        sum(r["co2_tons"] for r in countries),
+        sum(v["co2_tons"] for v in country_unrounded.values()),
+        abs_tol=country_bound,
+    )
 
 
 def test_country_installations_reconcile_to_raw_total(real):
