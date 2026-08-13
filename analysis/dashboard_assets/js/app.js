@@ -4,9 +4,6 @@
 (function (S) {
   "use strict";
 
-  S.charts = [];
-  S.register = function (chart) { S.charts.push(chart); };
-
   S.buildContext = function (payload, state) {
     const cities = S.filterCities(payload.cities, state);
     return {

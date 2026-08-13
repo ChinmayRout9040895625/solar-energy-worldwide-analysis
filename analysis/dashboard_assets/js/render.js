@@ -48,6 +48,50 @@
     return node;
   };
 
+  S.drawAxisX = function (spec, format) {
+    const group = S.svgEl("g", { class: "axis" });
+    const baseline = spec.height - spec.padBottom + 0.5;
+    for (const tick of spec.ticks) {
+      group.appendChild(S.svgEl("g", { class: "tick" }, [
+        S.svgEl("line", {
+          x1: tick.x, x2: tick.x, y1: spec.padTop, y2: baseline, class: "gridline",
+        }),
+        S.svgEl("text", {
+          x: tick.x, y: baseline + 16, "text-anchor": "middle", text: format(tick.value),
+        }),
+      ]));
+    }
+    group.appendChild(S.svgEl("line", {
+      class: "axis-line",
+      x1: spec.plotLeft, x2: spec.plotRight, y1: baseline, y2: baseline,
+    }));
+    return group;
+  };
+
+  S.svgRoot = function (spec, label) {
+    return S.svgEl("svg", {
+      viewBox: "0 0 " + spec.width + " " + spec.height,
+      width: spec.width,
+      height: spec.height,
+      role: "img",
+      "aria-label": label,
+    });
+  };
+
+  S.tipModel = null;  // last model requested, exposed for tests
+
+  S.attachTip = function (node, modelFn) {
+    node.addEventListener("pointerenter", () => { S.tipModel = modelFn(); S.showTip(S.tipModel); });
+    node.addEventListener("focus", () => { S.tipModel = modelFn(); S.showTip(S.tipModel); });
+    node.addEventListener("pointerleave", () => S.hideTip());
+    node.addEventListener("blur", () => S.hideTip());
+    node.addEventListener("pointermove", (event) => S.moveTip(event));
+  };
+
+  S.showTip = function () {};   // replaced in charts_matrix task
+  S.hideTip = function () {};
+  S.moveTip = function () {};
+
   S.buildTable = function (model) {
     const head = S.el("thead", null, [
       S.el("tr", null, model.columns.map((c) => S.el("th", { scope: "col", text: c }))),

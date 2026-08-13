@@ -263,3 +263,16 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+.plot text { font-size: 11px; font-variant-numeric: tabular-nums; }
+.plot .axis text { fill: var(--text-muted); }
+.plot .gridline { stroke: var(--grid); stroke-width: 1; }
+.plot .axis-line { stroke: var(--axis); stroke-width: 1; }
+.plot .cat-label { fill: var(--text-secondary); }
+.plot .value-label { fill: var(--text-primary); font-weight: 600; }
+.plot .seg-label { font-size: 10px; font-weight: 600; }
+.plot .hit { fill: transparent; cursor: pointer; }
+.plot .mark { transition: opacity 120ms ease; }
+.plot .mark.dim { opacity: 0.35; }
+.plot .mark:hover { opacity: 0.85; }
+.plot .note { fill: var(--text-muted); font-style: italic; }

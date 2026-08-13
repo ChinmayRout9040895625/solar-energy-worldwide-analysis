@@ -24,6 +24,7 @@ ASSET_ORDER = (
     "js/rollup.js",
     "js/filters.js",
     "js/render.js",
+    "js/charts_bars.js",
     "js/app.js",
 )
 
