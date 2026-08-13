@@ -22,6 +22,9 @@ ASSET_ORDER = (
     "js/boot.js",
     "js/core.js",
     "js/rollup.js",
+    "js/filters.js",
+    "js/render.js",
+    "js/app.js",
 )
 
 REQUIRED_KEYS = ("meta", "totals", "correlations", "caveats", "cities", "regions", "countries")

@@ -196,3 +196,18 @@ def test_main_returns_zero_on_success(tmp_path):
 
 def test_main_returns_one_on_failure(tmp_path):
     assert main([str(tmp_path / "absent.json"), str(tmp_path / "dashboard.html")]) == 1
+
+
+def test_asset_order_ends_with_app_js():
+    assert ASSET_ORDER[-1] == "js/app.js"
+
+
+def test_chart_modules_load_before_the_app(html):
+    assert html.index("S.mount = function") > html.index("S.filterCities = function")
+
+
+def test_page_hosts_are_empty_in_the_emitted_html(html):
+    # Cards are built at runtime from the registry; the shell ships them empty.
+    start = html.index('id="page-financial"')
+    end = html.index("</section>", start)
+    assert "card" not in html[start:end]
