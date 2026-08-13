@@ -113,9 +113,49 @@
     node.addEventListener("pointermove", (event) => S.moveTip(event));
   };
 
-  S.showTip = function () {};   // replaced in charts_matrix task
-  S.hideTip = function () {};
-  S.moveTip = function () {};
+  S.ensureTip = function () {
+    const doc = S.doc();
+    let tip = doc.getElementById("solar-tooltip");
+    if (!tip) {
+      tip = S.el("div", { class: "tooltip", id: "solar-tooltip", role: "status" });
+      tip.hidden = true;
+      doc.body.appendChild(tip);
+    }
+    return tip;
+  };
+
+  S.showTip = function (model) {
+    const tip = S.ensureTip();
+    S.clear(tip);
+    tip.appendChild(S.el("div", { class: "tip-value", text: model.value }));
+    tip.appendChild(S.el("div", { class: "tip-label", text: model.label }));
+    for (const [label, value] of model.rows || []) {
+      tip.appendChild(S.el("div", { class: "tip-row" }, [
+        S.el("span", { class: "tip-row-label", text: label }),
+        S.el("span", { class: "tip-row-value", text: value }),
+      ]));
+    }
+    tip.hidden = false;
+    return tip;
+  };
+
+  S.hideTip = function () {
+    const tip = S.ensureTip();
+    tip.hidden = true;
+    return tip;
+  };
+
+  S.moveTip = function (event) {
+    const tip = S.ensureTip();
+    if (!tip.style) return tip;
+    const x = (event && event.clientX) || 0;
+    const y = (event && event.clientY) || 0;
+    // Flip before the pointer near the right edge so the tip never leaves the viewport.
+    const flip = typeof globalThis.innerWidth === "number" && x > globalThis.innerWidth - 280;
+    tip.style.left = (flip ? x - 268 : x + 16) + "px";
+    tip.style.top = y + 16 + "px";
+    return tip;
+  };
 
   S.buildTable = function (model) {
     const head = S.el("thead", null, [

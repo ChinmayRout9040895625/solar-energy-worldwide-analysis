@@ -279,3 +279,20 @@ body {
 .plot .axis-title { fill: var(--text-muted); font-size: 11px; letter-spacing: 0.04em; }
 .plot .facet-title { fill: var(--text-secondary); font-size: 11px; font-weight: 600; }
 .plot .context-dot { fill: var(--context); }
+
+.matrix { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.matrix th, .matrix td { text-align: right; padding: 6px 10px; border-bottom: 1px solid var(--hairline); }
+.matrix th:first-child, .matrix td:first-child { text-align: left; }
+.matrix thead th { color: var(--text-muted); font-weight: 600; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.matrix tr[data-level="0"] { font-weight: 650; }
+.matrix tr[data-level="1"] td:first-child, .matrix tr[data-level="1"] th:first-child { padding-left: 30px; }
+.matrix tr[data-level="2"] { color: var(--text-secondary); }
+.matrix tr[data-level="2"] td:first-child, .matrix tr[data-level="2"] th:first-child { padding-left: 54px; }
+.matrix .twist {
+  font: inherit; color: var(--text-muted); background: transparent;
+  border: 0; cursor: pointer; padding: 0 8px 0 0; width: 22px; text-align: left;
+}
+.matrix .region-key { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 8px; }
+.tip-row { display: flex; justify-content: space-between; gap: 16px; margin-top: 4px; }
+.tip-row-label { color: var(--text-secondary); }
+.tip-row-value { font-variant-numeric: tabular-nums; }
