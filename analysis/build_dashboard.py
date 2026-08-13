@@ -21,6 +21,7 @@ ASSET_ORDER = (
     "css/dashboard.css",
     "js/boot.js",
     "js/core.js",
+    "js/rollup.js",
 )
 
 REQUIRED_KEYS = ("meta", "totals", "correlations", "caveats", "cities", "regions", "countries")
