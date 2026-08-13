@@ -19,16 +19,90 @@ and a self-contained interactive dashboard built from it.
   guards that defect in the Python rollups and `tests/js/rollup.test.mjs` guards
   it again in the browser-side ones.
 
+## The data at a glance
+
+<!-- CHARTS:BEGIN -->
+
+**48 cities · 30 countries · 7 regions · 208.35 t CO₂ avoided per year · 2,328,540 installations**
+
+_Generated from `output/data.json` by `analysis/render_readme_charts.py` — do not edit by hand._
+
+```text
+Where solar is installed vs where it pays back   r = 0.137
+
+MOST INSTALLATIONS               | BEST RETURN
+---------------------------------+------------------------------
+  Beijing               609,000 |* Phoenix          17.2%
+  Shanghai              609,000 |  Dubai            15.9%
+  Chicago               142,000 |  Cairo            15.4%
+* Los Angeles           142,000 |* Los Angeles      14.5%
+* Miami                 142,000 |  Tel Aviv         14.5%
+  New York              142,000 |  Johannesburg     13.9%
+* Phoenix               142,000 |  Cape Town        13.5%
+  Bangalore              73,000 |* Miami            13.5%
+* Delhi                  73,000 |  Athens           13.0%
+  Mumbai                 73,000 |  Brisbane         13.0%
+  Berlin                 18,500 |* Delhi            13.0%
+  Munich                 18,500 |  Madrid           13.0%
+
+* in both lists - 4 of 12
+```
+
+```text
+Top 12 cities by return on investment
+
+  1. Phoenix       United States   ██████████████████████████████  17.2%
+  2. Dubai         UAE             ████████████████████████████··  15.9%
+  3. Cairo         Egypt           ███████████████████████████···  15.4%
+  4. Los Angeles   United States   █████████████████████████·····  14.5%
+  5. Tel Aviv      Israel          █████████████████████████·····  14.5%
+  6. Johannesburg  South Africa    ████████████████████████······  13.9%
+  7. Cape Town     South Africa    ████████████████████████······  13.5%
+  8. Miami         United States   ████████████████████████······  13.5%
+  9. Athens        Greece          ███████████████████████·······  13.0%
+ 10. Brisbane      Australia       ███████████████████████·······  13.0%
+ 11. Delhi         India           ███████████████████████·······  13.0%
+ 12. Madrid        Spain           ███████████████████████·······  13.0%
+```
+
+```text
+Mean ROI against installed base, by region
+
+region         mean ROI                  installations             
+Middle East    ████████████████ 14.50%   ················       920
+Africa         ████████████████ 14.27%   ················     3,850
+Oceania        █████████████··· 12.17%   ················    26,700
+North America  █████████████··· 12.03%   ████████········   718,200
+Asia           █████████████··· 11.42%   ████████████████ 1,469,100
+South America  ████████████···· 10.54%   ················    12,170
+Europe         ██████████······  8.85%   █···············    97,600
+
+Europe has the most cities and the lowest return; Asia holds 63% of the
+installed base and ranks fifth of seven on return.
+```
+
+```text
+Payback risk (Low < 7 yrs | Medium 7-9 | High > 9)
+
+Low     ██████························   5 cities
+Medium  ████████████████████████······  19 cities
+High    ██████████████████████████████  24 cities
+```
+
+<!-- CHARTS:END -->
+
 ## Build
 
 ```bash
-python -m analysis.build_data       # CSV  -> output/data.json   (validated)
-python -m analysis.build_dashboard  # JSON -> output/dashboard.html
+python -m analysis.build_data          # CSV  -> output/data.json   (validated)
+python -m analysis.build_dashboard     # JSON -> output/dashboard.html
+python -m analysis.render_readme_charts  # JSON -> the chart block above
 ```
 
-Both builds fail loud: a missing file, an unexpected column, a null, a rollup that
-does not reconcile, or an external reference in the emitted HTML aborts the build
-with the specific problem printed and writes nothing.
+Every build fails loud: a missing file, an unexpected column, a null, a rollup
+that does not reconcile, an external reference in the emitted HTML, or a missing
+marker pair in this README aborts with the specific problem printed and writes
+nothing.
 
 Open `output/dashboard.html` directly — it makes no network requests of any kind.
 
@@ -51,6 +125,7 @@ node --test "tests/js/*.test.mjs"   # chart geometry, rollups, filter state
 | `analysis/build_data.py` | Validation, reconciliation, `output/data.json` |
 | `analysis/build_dashboard.py` | Asset inlining, the self-containment gate, `output/dashboard.html` |
 | `analysis/dashboard_assets/` | The shell, stylesheet and JavaScript modules that get inlined |
+| `analysis/render_readme_charts.py` | Regenerates this README's chart block from the payload |
 | `tests/js/` | Chart geometry tests, plus a DOM shim that mounts the whole page |
 | `docs/superpowers/specs/` | The approved design |
 | `docs/superpowers/plans/` | The two implementation plans |
