@@ -133,3 +133,28 @@ measures are translations of `analysis/metrics.py`, not verified computations.
 The build prints the figures each card should show, and a test asserts that
 every measure a visual binds to actually exists in the model — which is the
 failure this generator is most likely to produce.
+
+## 2026-08-13 — Report switched from PBIR-Legacy to PBIR after a blank canvas
+
+The first Power BI attempt emitted PBIR-Legacy (`report.json`), chosen to avoid
+requiring a preview toggle on a Dec-2024 Desktop. It opened to a completely
+blank canvas.
+
+Root cause, found in the docs already consulted for the build: `report.json`
+"doesn't support external editing". Desktop reads the project, takes its name —
+hence a correct window title — and discards a layout it did not author. The
+missing `query`/`dataTransforms` keys were a symptom of that, not the cause;
+patching them would have chased the wrong thing.
+
+Switched to PBIR (`definition/` folder), which Microsoft explicitly documents as
+"a publicly documented format that supports modifications from non-Power BI
+applications", with a JSON schema per file and blocking errors that name the
+offending file. It costs a preview toggle, which is now stated in the README and
+in the build output. Two schema mistakes surfaced immediately once the real
+schemas were read: `displayOption` is a string enum (`FitToPage`), not an
+integer, and `layoutOptimization` is `"None"`, not `0`.
+
+Lesson recorded because it generalises: "the older format is safer" was an
+assumption about compatibility that ignored a documented statement about
+supportability. The format designed for the job beat the format that merely
+looked more established.

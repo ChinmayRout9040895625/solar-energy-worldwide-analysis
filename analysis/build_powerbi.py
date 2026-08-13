@@ -1,11 +1,19 @@
 """Generate a Power BI Desktop project (PBIP) from output/data.json.
 
-Format choice: TMSL (`model.bim`) for the semantic model and PBIR-Legacy
-(`report.json`) for the report. The newer TMDL and PBIR folder formats are
-nicer to diff, but both are preview features that the installed Desktop build
-(2.139 / Dec 2024) will not read without flags turned on. These two are read
-natively by every Desktop since 2019, and are still plain JSON — so this
-generator can validate everything it emits.
+Format choice: TMSL (`model.bim`) for the semantic model and **PBIR** — the
+`definition/` folder — for the report.
+
+The first attempt emitted PBIR-Legacy (`report.json`) on the theory that an
+older Desktop reads it natively. It opened to a blank canvas, because
+Microsoft documents that file as one that "doesn't support external editing":
+Desktop parses the project, takes the name, and discards a layout it did not
+write itself. PBIR is the format built for external authoring — every file
+carries a public JSON schema, and Desktop validates them on open and reports
+which file is at fault. That is worth more than avoiding a preview toggle.
+
+PBIR is a preview feature: enable **Store reports using enhanced metadata
+format (PBIR)** under File > Options and settings > Options > Preview features
+before opening the project.
 
 The data is embedded in the model as a literal M `#table`, not read from the
 CSV. A file path inside a Power BI query is absolute, so a generated project
@@ -26,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 import uuid
 from pathlib import Path
@@ -135,6 +144,17 @@ PAGES = (
     {"id": "PageProduction", "display": "Production"},
     {"id": "PageSustainability", "display": "Sustainability"},
 )
+
+_BASE = "https://developer.microsoft.com/json-schemas/fabric"
+SCHEMA = {
+    "platform": f"{_BASE}/gitIntegration/platformProperties/2.0.0/schema.json",
+    "pbir": f"{_BASE}/item/report/definitionProperties/1.0.0/schema.json",
+    "version": f"{_BASE}/item/report/definition/versionMetadata/1.0.0/schema.json",
+    "report": f"{_BASE}/item/report/definition/report/1.0.0/schema.json",
+    "pages": f"{_BASE}/item/report/definition/pagesMetadata/1.0.0/schema.json",
+    "page": f"{_BASE}/item/report/definition/page/1.0.0/schema.json",
+    "visual": f"{_BASE}/item/report/definition/visualContainer/1.0.0/schema.json",
+}
 
 
 class PowerBIBuildError(Exception):
@@ -255,22 +275,32 @@ def model_bim(payload: dict) -> dict:
     }
 
 
-# --- report -----------------------------------------------------------------
+# --- report (PBIR) ----------------------------------------------------------
 
-def _select_measure(name: str) -> dict:
+def _field(kind: str, prop: str) -> dict:
+    """A QueryExpressionContainer. PBIR names the table on the SourceRef."""
+    return {kind: {"Expression": {"SourceRef": {"Entity": "Cities"}}, "Property": prop}}
+
+
+def _projection(kind: str, prop: str) -> dict:
     return {
-        "Measure": {"Expression": {"SourceRef": {"Source": "c"}}, "Property": name},
-        "Name": f"Cities.{name}",
-        "NativeReferenceName": name,
+        "field": _field(kind, prop),
+        "queryRef": f"Cities.{prop}",
+        "nativeQueryRef": prop,
     }
 
 
-def _select_column(name: str) -> dict:
-    return {
-        "Column": {"Expression": {"SourceRef": {"Source": "c"}}, "Property": name},
-        "Name": f"Cities.{name}",
-        "NativeReferenceName": name,
-    }
+def _column(prop: str) -> dict:
+    return _projection("Column", prop)
+
+
+def _measure(prop: str) -> dict:
+    return _projection("Measure", prop)
+
+
+def _name_for(page_id: str, index: int, title: str) -> str:
+    """Unique per report, <= 50 chars, word characters only."""
+    return uuid.uuid5(uuid.NAMESPACE_URL, f"{page_id}:{index}:{title}").hex[:20]
 
 
 def _visual(
@@ -280,89 +310,58 @@ def _visual(
     width: int,
     height: int,
     title: str,
-    projections: dict[str, list[str]],
-    selects: list[dict],
-    order_by: list | None = None,
+    roles: dict[str, list[dict]],
 ) -> dict:
-    name = uuid.uuid5(uuid.NAMESPACE_URL, f"visual:{title}:{visual_type}").hex[:20]
-    config = {
-        "name": name,
-        "layouts": [{
-            "id": 0,
-            "position": {"x": x, "y": y, "z": 0, "width": width, "height": height, "tabOrder": 0},
-        }],
-        "singleVisual": {
+    """One visual.json document, minus its name (assigned per page)."""
+    document = {
+        "$schema": SCHEMA["visual"],
+        "name": title,  # replaced with a stable id by _page_visuals
+        "position": {"x": x, "y": y, "z": 0, "width": width, "height": height, "tabOrder": 0},
+        "visual": {
             "visualType": visual_type,
-            "projections": {
-                role: [{"queryRef": f"Cities.{field}"} for field in fields]
-                for role, fields in projections.items()
-            },
-            "prototypeQuery": {
-                "Version": 2,
-                "From": [{"Name": "c", "Entity": "Cities", "Type": 0}],
-                "Select": selects,
-                **({"OrderBy": order_by} if order_by else {}),
-            },
-            "drillFilterOtherVisuals": True,
-            "objects": {},
-            "vcObjects": {
+            "objects": {
                 "title": [{
                     "properties": {
-                        "text": {"expr": {"Literal": {"Value": f"'{title}'"}}},
                         "show": {"expr": {"Literal": {"Value": "true"}}},
+                        "text": {"expr": {"Literal": {"Value": f"'{title}'"}}},
                     }
                 }]
             },
+            "drillFilterOtherVisuals": True,
         },
     }
-    return {
-        "x": x, "y": y, "z": 0, "width": width, "height": height,
-        "config": json.dumps(config),
-        "filters": "[]",
-    }
+    if roles:
+        document["visual"]["query"] = {
+            "queryState": {
+                role: {"projections": projections} for role, projections in roles.items()
+            }
+        }
+    return document
 
 
-def _card(x: int, y: int, width: int, height: int, measure: str, title: str) -> dict:
-    return _visual(
-        "card", x, y, width, height, title,
-        {"Values": [measure]}, [_select_measure(measure)],
-    )
+def _card(x: int, y: int, w: int, h: int, measure: str, title: str) -> dict:
+    return _visual("card", x, y, w, h, title, {"Values": [_measure(measure)]})
 
 
-def _slicer(x: int, y: int, width: int, height: int, column: str, title: str) -> dict:
-    return _visual(
-        "slicer", x, y, width, height, title,
-        {"Values": [column]}, [_select_column(column)],
-    )
+def _slicer(x: int, y: int, w: int, h: int, column: str, title: str) -> dict:
+    return _visual("slicer", x, y, w, h, title, {"Values": [_column(column)]})
 
 
-def _bar(
-    x: int, y: int, width: int, height: int, title: str,
-    category: str, measure: str, descending: bool = True,
-) -> dict:
-    order = [{
-        "Direction": 2 if descending else 1,
-        "Expression": {
-            "Measure": {"Expression": {"SourceRef": {"Source": "c"}}, "Property": measure}
-        },
-    }]
-    return _visual(
-        "barChart", x, y, width, height, title,
-        {"Category": [category], "Y": [measure]},
-        [_select_column(category), _select_measure(measure)],
-        order_by=order,
-    )
+def _bar(x: int, y: int, w: int, h: int, title: str, category: str, measure: str) -> dict:
+    return _visual("barChart", x, y, w, h, title, {
+        "Category": [_column(category)],
+        "Y": [_measure(measure)],
+    })
 
 
 def _scatter(
-    x: int, y: int, width: int, height: int, title: str,
-    detail: str, x_measure: str, y_measure: str,
+    x: int, y: int, w: int, h: int, title: str, detail: str, x_measure: str, y_measure: str
 ) -> dict:
-    return _visual(
-        "scatterChart", x, y, width, height, title,
-        {"Details": [detail], "X": [x_measure], "Y": [y_measure]},
-        [_select_column(detail), _select_measure(x_measure), _select_measure(y_measure)],
-    )
+    return _visual("scatterChart", x, y, w, h, title, {
+        "Category": [_column(detail)],
+        "X": [_measure(x_measure)],
+        "Y": [_measure(y_measure)],
+    })
 
 
 def _page_financial() -> list[dict]:
@@ -391,87 +390,77 @@ def _page_production() -> list[dict]:
         _bar(448, 128, 400, 270, "Installations by region", "Region", "Total Installations"),
         _bar(448, 410, 400, 278, "Production consistency by region", "Region",
              "Production Consistency"),
-        _scatter(864, 278, 392, 410, "Irradiance vs production  (r = 0.979)",
-                 "City", "Mean ROI %", "Mean Production kWh"),
+        _scatter(864, 278, 392, 410, "Irradiance vs production", "City",
+                 "Mean ROI %", "Mean Production kWh"),
     ]
 
 
 def _page_sustainability() -> list[dict]:
-    matrix = _visual(
-        "pivotTable", 16, 128, 500, 560, "Region > country > city",
-        {"Rows": ["Region", "Country", "City"],
-         "Values": ["Total CO2 Tons", "Total Installations"]},
-        [
-            _select_column("Region"), _select_column("Country"), _select_column("City"),
-            _select_measure("Total CO2 Tons"), _select_measure("Total Installations"),
-        ],
-    )
-    world_map = _visual(
-        "map", 528, 128, 728, 300, "Cities by installed base",
-        {"Category": ["City"], "Size": ["Total Installations"]},
-        [_select_column("City"), _select_measure("Total Installations")],
-    )
     return [
         _card(16, 16, 220, 100, "Total CO2 Tons", "CO2 avoided (t/yr)"),
         _card(248, 16, 220, 100, "Regions", "Regions"),
         _slicer(864, 16, 190, 100, "Region", "Region"),
         _slicer(1066, 16, 190, 100, "Payback Risk Band", "Payback risk"),
-        matrix,
-        world_map,
+        _visual("pivotTable", 16, 128, 500, 560, "Region > country > city", {
+            "Rows": [_column("Region"), _column("Country"), _column("City")],
+            "Values": [_measure("Total CO2 Tons"), _measure("Total Installations")],
+        }),
+        _visual("map", 528, 128, 728, 300, "Cities by installed base", {
+            "Category": [_column("City")],
+            "Size": [_measure("Total Installations")],
+        }),
         _bar(528, 440, 356, 248, "CO2 avoided by country", "Country", "Total CO2 Tons"),
-        _scatter(896, 440, 360, 248, "ROI vs viability  (r = 0.982)",
-                 "City", "Mean ROI %", "Mean ROI %"),
+        _scatter(896, 440, 360, 248, "ROI vs viability", "City",
+                 "Mean ROI %", "Mean ROI %"),
     ]
 
 
-def report_json(payload: dict) -> dict:
-    builders = (_page_financial, _page_production, _page_sustainability)
-    sections = []
-    for ordinal, (page, builder) in enumerate(zip(PAGES, builders)):
-        containers = builder()
-        # Visual names must be unique across the whole report, and the helpers
-        # seed theirs from title + type — which collides as soon as two pages
-        # carry the same slicer or card. Re-seed per page, deterministically.
-        for index, container in enumerate(containers):
-            config = json.loads(container["config"])
-            config["name"] = uuid.uuid5(
-                uuid.NAMESPACE_URL, f"visual:{page['id']}:{index}:{config['name']}"
-            ).hex[:20]
-            container["config"] = json.dumps(config)
+PAGE_BUILDERS = {
+    "PageFinancial": _page_financial,
+    "PageProduction": _page_production,
+    "PageSustainability": _page_sustainability,
+}
 
-        sections.append({
-            "name": page["id"],
-            "displayName": page["display"],
-            "ordinal": ordinal,
-            "width": CANVAS_WIDTH,
-            "height": CANVAS_HEIGHT,
-            "displayOption": 1,
-            "config": "{}",
-            "filters": "[]",
-            "visualContainers": containers,
-        })
 
-    return {
-        "config": json.dumps({
-            "version": "5.43",
-            "themeCollection": {"baseTheme": {"name": "CY24SU02"}},
-            "activeSectionIndex": 0,
-            "defaultDrillFilterOtherVisuals": True,
-            "settings": {"useStylableVisualContainerHeader": True},
-        }),
-        "layoutOptimization": 0,
-        "resourcePackages": [{
-            "resourcePackage": {
-                "disabled": False,
-                "items": [{"name": "CY24SU02", "path": "BaseThemes/CY24SU02.json", "type": 202}],
-                "name": "SharedResources",
-                "type": 2,
-            }
-        }],
-        "sections": sections,
+def report_files(payload: dict) -> dict[str, dict]:
+    """Every PBIR document, keyed by path relative to the Report folder."""
+    files: dict[str, dict] = {
+        "definition/version.json": {"$schema": SCHEMA["version"], "version": "1.0.0"},
+        "definition/report.json": {
+            "$schema": SCHEMA["report"],
+            "layoutOptimization": "None",
+            "themeCollection": {
+                "baseTheme": {
+                    "name": "CY24SU06",
+                    "reportVersionAtImport": "5.55",
+                    "type": "SharedResources",
+                }
+            },
+        },
+        "definition/pages/pages.json": {
+            "$schema": SCHEMA["pages"],
+            "pageOrder": [page["id"] for page in PAGES],
+            "activePageName": PAGES[0]["id"],
+        },
     }
 
+    for page in PAGES:
+        page_id = page["id"]
+        files[f"definition/pages/{page_id}/page.json"] = {
+            "$schema": SCHEMA["page"],
+            "name": page_id,
+            "displayName": page["display"],
+            "displayOption": "FitToPage",
+            "width": CANVAS_WIDTH,
+            "height": CANVAS_HEIGHT,
+        }
+        for index, visual in enumerate(PAGE_BUILDERS[page_id]()):
+            visual["name"] = _name_for(page_id, index, visual["name"])
+            files[
+                f"definition/pages/{page_id}/visuals/{visual['name']}/visual.json"
+            ] = visual
 
+    return files
 # --- writing ----------------------------------------------------------------
 
 def _platform(item_type: str) -> dict:
@@ -523,11 +512,25 @@ def build(data_path: Path, out_dir: Path) -> Path:
     _write(model_dir / ".platform", _platform("SemanticModel"))
 
     _write(report_dir / "definition.pbir", {
-        "version": "1.0",
+        "$schema": SCHEMA["pbir"],
+        # 4.0 or higher is what allows the definition/ folder (PBIR); below
+        # that Desktop expects PBIR-Legacy report.json instead.
+        "version": "4.0",
         "datasetReference": {"byPath": {"path": f"../{NAME}.SemanticModel"}},
     })
-    _write(report_dir / "report.json", report_json(payload))
     _write(report_dir / ".platform", _platform("Report"))
+
+    # Rebuild the definition tree from scratch: a renamed or removed visual
+    # would otherwise leave an orphan folder that Desktop still loads.
+    definition = report_dir / "definition"
+    if definition.exists():
+        shutil.rmtree(definition)
+    legacy = report_dir / "report.json"
+    if legacy.exists():
+        legacy.unlink()
+
+    for relative, document in report_files(payload).items():
+        _write(report_dir / relative, document)
 
     return out_dir / f"{NAME}.pbip"
 

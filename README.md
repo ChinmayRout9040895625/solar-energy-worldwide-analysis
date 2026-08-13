@@ -105,11 +105,16 @@ python -m analysis.render_readme_charts  # JSON -> the chart block above
 `python -m analysis.build_powerbi` writes a Power BI Desktop project; open
 `output/powerbi/SolarEnergyWorldwide.pbip`.
 
-It emits **TMSL** (`model.bim`) and **PBIR-Legacy** (`report.json`) rather than the
-newer TMDL/PBIR folder formats, because those are preview features that older
-Desktop builds will not read without flags enabled. Both emitted formats are still
-plain JSON, so the generator validates everything it writes. A newer Desktop will
-offer to upgrade the project to TMDL/PBIR on first save.
+**Enable the PBIR preview feature first**, or the report will not load:
+File > Options and settings > Options > Preview features >
+*Store reports using enhanced metadata format (PBIR)*.
+
+It emits **TMSL** (`model.bim`) for the model and **PBIR** (the `definition/`
+folder) for the report. An earlier attempt used PBIR-Legacy (`report.json`) and
+opened to a blank canvas: Microsoft documents that file as one that "doesn't
+support external editing", so Desktop discards a layout it did not write itself.
+PBIR is the format built for external authoring — every file carries a public
+JSON schema and Desktop names the offending file if one is malformed.
 
 The 48 rows are embedded in the model as a literal M `#table` rather than read
 from the CSV. A file path inside a Power BI query is absolute, so a project
