@@ -25,6 +25,7 @@ ASSET_ORDER = (
     "js/filters.js",
     "js/render.js",
     "js/charts_bars.js",
+    "js/charts_dots.js",
     "js/app.js",
 )
 
