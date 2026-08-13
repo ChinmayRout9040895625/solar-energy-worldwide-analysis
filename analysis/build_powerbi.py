@@ -550,7 +550,15 @@ def main(argv: list[str] | None = None) -> int:
     payload = json.loads(Path(args.data).read_text(encoding="utf-8"))
     t = payload["totals"]
     print(f"wrote {entry}")
-    print("  open that file in Power BI Desktop. Expected on the financial page:")
+    print()
+    print("  BEFORE OPENING, enable the PBIR preview feature, or the report will")
+    print("  load EMPTY with no error — Desktop cannot read a definition/ folder")
+    print("  without it:")
+    print("    File > Options and settings > Options > Preview features")
+    print("      [x] Store reports using enhanced metadata format (PBIR)")
+    print("    then restart Power BI Desktop.")
+    print()
+    print("  Expected on the financial page:")
     print(f"    Cities {t['cities']} | CO2 {t['co2_tons']:.2f} t | "
           f"Installations {t['installations']:,}")
     print("    Payback risk Low 5 / Medium 19 / High 24")
