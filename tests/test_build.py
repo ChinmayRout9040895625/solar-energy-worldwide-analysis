@@ -206,6 +206,37 @@ def test_chart_modules_load_before_the_app(html):
     assert html.index("S.mount = function") > html.index("S.filterCities = function")
 
 
+def test_all_thirteen_charts_are_registered(html):
+    for chart_id in (
+        "mismatch", "roi-by-city", "risk-by-region", "regional-roi-rank",
+        "installations-vs-roi", "production-by-country", "installations-by-region",
+        "production-consistency", "ghi-vs-production", "co2-by-country",
+        "roi-vs-viability", "world-map", "region-country-city",
+    ):
+        assert f'id: "{chart_id}"' in html
+
+
+def test_the_hero_module_loads_before_the_bar_module():
+    assert ASSET_ORDER.index("js/charts_mismatch.js") < ASSET_ORDER.index("js/charts_bars.js")
+
+
+def test_dark_theme_is_declared_under_both_scopes(html):
+    assert "prefers-color-scheme: dark" in html
+    assert ':root[data-theme="dark"]' in html
+    assert ':root:not([data-theme="light"])' in html
+
+
+def test_reduced_motion_is_respected(html):
+    assert "prefers-reduced-motion" in html
+
+
+def test_the_page_stays_under_the_size_budget(tmp_path):
+    out = tmp_path / "dashboard.html"
+    build(DATA, out)
+    size_kb = out.stat().st_size / 1024
+    assert size_kb < 400, f"dashboard is {size_kb:.0f} KB"
+
+
 def test_page_hosts_are_empty_in_the_emitted_html(html):
     # Cards are built at runtime from the registry; the shell ships them empty.
     start = html.index('id="page-financial"')

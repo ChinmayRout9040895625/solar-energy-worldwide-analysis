@@ -296,3 +296,9 @@ body {
 .tip-row { display: flex; justify-content: space-between; gap: 16px; margin-top: 4px; }
 .tip-row-label { color: var(--text-secondary); }
 .tip-row-value { font-variant-numeric: tabular-nums; }
+
+.hero { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; margin-bottom: 20px; }
+.hero-figure { margin: 0; font-size: 56px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+.hero-label { margin: 0; max-width: 44ch; color: var(--text-secondary); font-size: 14px; }
+.plot .rank-column .cat-label { fill: var(--text-primary); }
+.plot .links path { opacity: 0.7; }

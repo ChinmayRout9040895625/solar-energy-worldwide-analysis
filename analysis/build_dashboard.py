@@ -24,6 +24,9 @@ ASSET_ORDER = (
     "js/rollup.js",
     "js/filters.js",
     "js/render.js",
+    # charts_mismatch.js precedes charts_bars.js so the hero registers first
+    # and therefore renders at the top of the financial page.
+    "js/charts_mismatch.js",
     "js/charts_bars.js",
     "js/charts_dots.js",
     "js/charts_scatter.js",
