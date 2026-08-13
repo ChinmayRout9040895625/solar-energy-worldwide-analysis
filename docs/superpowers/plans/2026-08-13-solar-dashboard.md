@@ -710,8 +710,10 @@ from pathlib import Path
 
 ASSETS = Path(__file__).resolve().parent / "dashboard_assets"
 
-# Load order matters: boot.js owns the namespace, app.js runs last.
+# Load order matters: boot.js owns the namespace, app.js runs last. The
+# stylesheet is listed here too so test_every_declared_asset_exists covers it.
 ASSET_ORDER = (
+    "css/dashboard.css",
     "js/boot.js",
 )
 
@@ -1142,7 +1144,7 @@ Expected: 17 pass, 0 fail
 
 - [ ] **Step 6: Register the asset**
 
-In `analysis/build_dashboard.py`, change `ASSET_ORDER` to:
+In `analysis/build_dashboard.py`, append `"js/core.js"` to `ASSET_ORDER`:
 
 ```python
 ASSET_ORDER = (
@@ -1151,8 +1153,6 @@ ASSET_ORDER = (
     "js/core.js",
 )
 ```
-
-The CSS is now read through `ASSET_ORDER` rather than separately, so `test_every_declared_asset_exists` covers it too.
 
 - [ ] **Step 7: Bridge the JS suite into pytest**
 

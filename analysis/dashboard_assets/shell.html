@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Where solar pays back — 48 cities</title>
+<style>{{CSS}}</style>
+</head>
+<body>
+<div class="viz-root" id="app">
+
+  <header class="masthead">
+    <p class="eyebrow">Solar energy worldwide &middot; 48 cities &middot; 30 countries</p>
+    <h1>Where solar pays back</h1>
+    <p class="standfirst">Deployment and return are two different maps. This page reads
+    one dataset of 48 cities three ways &mdash; what it costs back, what it produces, and
+    what it saves in carbon &mdash; and states the definition of every measure beside it.</p>
+    <button type="button" id="theme-toggle" class="ghost-button" aria-pressed="false">
+      Dark theme
+    </button>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Dataset totals"></section>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Dashboard pages">
+    <button type="button" role="tab" id="tab-financial" aria-controls="page-financial"
+            aria-selected="true" class="tab">Financial performance</button>
+    <button type="button" role="tab" id="tab-production" aria-controls="page-production"
+            aria-selected="false" class="tab">Production</button>
+    <button type="button" role="tab" id="tab-sustainability" aria-controls="page-sustainability"
+            aria-selected="false" class="tab">Sustainability</button>
+  </nav>
+
+  <form class="filters" id="filters" aria-label="Filters">
+    <fieldset class="chipset" id="region-chips">
+      <legend class="eyebrow">Region</legend>
+    </fieldset>
+    <fieldset class="chipset" id="risk-chips">
+      <legend class="eyebrow">Payback risk</legend>
+    </fieldset>
+    <div class="filter-actions">
+      <button type="button" id="reset-filters" class="ghost-button">Reset filters</button>
+      <label class="switch">
+        <input type="checkbox" id="toggle-tables">
+        <span>Show values as tables</span>
+      </label>
+      <p class="filter-readout" id="filter-readout" role="status"></p>
+    </div>
+  </form>
+
+  <main>
+    <section class="page" id="page-financial" role="tabpanel" aria-labelledby="tab-financial"></section>
+    <section class="page" id="page-production" role="tabpanel" aria-labelledby="tab-production" hidden></section>
+    <section class="page" id="page-sustainability" role="tabpanel" aria-labelledby="tab-sustainability" hidden></section>
+  </main>
+
+  <footer class="colophon">
+    <h2 class="eyebrow">What this data cannot tell you</h2>
+    <ul class="caveats" id="caveats"></ul>
+    <p class="meta" id="meta"></p>
+  </footer>
+
+</div>
+
+<script type="application/json" id="solar-data">{{DATA}}</script>
+<script>{{JS}}</script>
+</body>
+</html>
