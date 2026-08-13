@@ -20,6 +20,7 @@ ASSETS = Path(__file__).resolve().parent / "dashboard_assets"
 ASSET_ORDER = (
     "css/dashboard.css",
     "js/boot.js",
+    "js/core.js",
 )
 
 REQUIRED_KEYS = ("meta", "totals", "correlations", "caveats", "cities", "regions", "countries")

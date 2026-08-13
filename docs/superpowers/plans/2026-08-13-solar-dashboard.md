@@ -30,7 +30,7 @@
 - **One filter row, above everything it scopes.** Filters re-render every chart, stat and table on the page.
 - **Theme:** complete light palette on bare `:root`; dark redefined under both `@media (prefers-color-scheme: dark)` guarded with `:root:not([data-theme="light"])` *and* `:root[data-theme="dark"]`.
 - Git identity is not configured globally. Commit with `git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "..."`.
-- Run Python tests with `python -m pytest`. Run JS tests with `node --test tests/js/`. Windows; use forward slashes in paths.
+- Run Python tests with `python -m pytest`. Run JS tests with `node --test "tests/js/*.test.mjs"`. Windows; use forward slashes in paths.
 
 ## Verified facts to assert (do not recompute expectations)
 
@@ -81,7 +81,7 @@ No webfont is loaded, because no external request is permitted and a base64 face
 | `tests/js/load.mjs` | Loads asset scripts into the node test context |
 | `tests/js/fakedom.mjs` | Minimal `document` shim for render-layer smoke tests |
 | `tests/js/*.test.mjs` | Geometry, rollup, filter tests |
-| `tests/test_dashboard_js.py` | Runs `node --test tests/js/` from pytest |
+| `tests/test_dashboard_js.py` | Runs `node --test "tests/js/*.test.mjs"` from pytest |
 
 Data flows one direction: `data.json` → inlined payload → filter → rollup → spec → SVG. No step reaches backwards.
 
@@ -1169,7 +1169,9 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-JS_TESTS = ROOT / "tests" / "js"
+# A glob, not a directory: node 22 treats a bare directory argument as a module
+# to execute rather than as a discovery root.
+JS_TESTS = "tests/js/*.test.mjs"
 
 
 def test_node_is_available():
@@ -1183,7 +1185,7 @@ def test_javascript_suite_passes():
         pytest.skip("node not installed — JS chart geometry is unverified here")
 
     result = subprocess.run(
-        [node, "--test", str(JS_TESTS)],
+        [node, "--test", JS_TESTS],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -1201,7 +1203,7 @@ The skip is deliberate and narrow: a machine without node still runs the Python 
 Run: `python -m pytest tests/ -q`
 Expected: all pass, 2 new tests in `test_dashboard_js.py`
 
-Run: `node --test tests/js/`
+Run: `node --test "tests/js/*.test.mjs"`
 Expected: 17 pass
 
 - [ ] **Step 9: Commit**
@@ -1524,7 +1526,7 @@ In `analysis/build_dashboard.py`, append `"js/rollup.js"` to `ASSET_ORDER` after
 - [ ] **Step 6: Run the whole suite**
 
 Run: `python -m pytest tests/ -q` — all pass
-Run: `node --test tests/js/` — 32 pass
+Run: `node --test "tests/js/*.test.mjs"` — 32 pass
 
 - [ ] **Step 7: Commit**
 
@@ -2355,7 +2357,7 @@ def test_page_hosts_are_empty_in_the_emitted_html(html):
 - [ ] **Step 10: Run everything and open the page**
 
 Run: `python -m pytest tests/ -q` — all pass
-Run: `node --test tests/js/` — 56 pass
+Run: `node --test "tests/js/*.test.mjs"` — 56 pass
 Run: `python -m analysis.build_dashboard`
 
 Open `output/dashboard.html`. Expected: KPI strip showing 48 / 30 / 208.35 / 2.3M / 520,875; seven region chips each with its own colour key and a check; three risk chips; tabs that switch the visible (empty) page; reset and table toggle present; five caveats in the footer; theme toggle flips light and dark.
@@ -3033,7 +3035,7 @@ Expected: 17 pass, 0 fail
 In `analysis/build_dashboard.py`, insert `"js/charts_bars.js"` into `ASSET_ORDER` **before** `"js/app.js"`.
 
 Run: `python -m pytest tests/ -q` — all pass
-Run: `node --test tests/js/` — all pass
+Run: `node --test "tests/js/*.test.mjs"` — all pass
 Run: `python -m analysis.build_dashboard`
 
 Open `output/dashboard.html`. Expected: page 1 shows the 48-bar ROI chart with Dubai labelled at rank 2 and the stacked risk chart summing 5 / 19 / 24; page 2 shows production by country and installations by region; page 3 shows CO₂ by country. Clicking any bar isolates that region and every chart and KPI re-renders. Ticking "Show values as tables" reveals a table under each.
@@ -3380,7 +3382,7 @@ Expected: 10 pass, 0 fail
 
 Insert `"js/charts_dots.js"` into `ASSET_ORDER` before `"js/app.js"`.
 
-Run: `python -m pytest tests/ -q` and `node --test tests/js/` — all pass
+Run: `python -m pytest tests/ -q` and `node --test "tests/js/*.test.mjs"` — all pass
 Run: `python -m analysis.build_dashboard`
 
 Open the page. Expected: page 1 gains the ranked ROI dot plot with Middle East at #1 carrying `n=1`; page 2 gains the consistency plot where Middle East reads `n/a — 1 city` rather than a dot. Filter to Oceania and confirm the consistency chart still computes (3 cities) while a filter down to 2 cities flips it to n/a.
@@ -3930,7 +3932,7 @@ Expected: 14 pass, 0 fail
 
 Insert `"js/charts_scatter.js"` into `ASSET_ORDER` before `"js/app.js"`.
 
-Run: `python -m pytest tests/ -q` and `node --test tests/js/` — all pass
+Run: `python -m pytest tests/ -q` and `node --test "tests/js/*.test.mjs"` — all pass
 Run: `python -m analysis.build_dashboard`
 
 Open the page. Expected: page 1 gains the installations/ROI cloud with Phoenix, Dubai and Cairo labelled and the 0.137 callout beneath; page 2 gains seven region panels on shared axes; page 3 gains the viability cloud. Check by eye that facet titles do not collide with the panel above and that no axis label is clipped.
@@ -4230,7 +4232,7 @@ Expected: 13 pass, 0 fail
 
 Insert `"js/charts_map.js"` into `ASSET_ORDER` before `"js/app.js"`.
 
-Run: `python -m pytest tests/ -q` and `node --test tests/js/` — all pass
+Run: `python -m pytest tests/ -q` and `node --test "tests/js/*.test.mjs"` — all pass
 Run: `python -m analysis.build_dashboard`
 
 Open page 3. Expected: a recognisable world scatter — a European cluster, a North American arc, Sydney and Melbourne low-right — with China's bubble the largest. Confirm the graticule reads as recessive hairlines and the tropic labels do not sit on top of a bubble in the Atlantic.
@@ -4688,7 +4690,7 @@ Expected: 17 pass, 0 fail
 
 Insert `"js/charts_matrix.js"` into `ASSET_ORDER` before `"js/app.js"`.
 
-Run: `python -m pytest tests/ -q` and `node --test tests/js/` — all pass
+Run: `python -m pytest tests/ -q` and `node --test "tests/js/*.test.mjs"` — all pass
 Run: `python -m analysis.build_dashboard`
 
 Open the page and verify by hand:
@@ -5059,7 +5061,7 @@ def test_the_page_stays_under_the_size_budget(tmp_path):
 - [ ] **Step 8: Run everything and read the page properly**
 
 Run: `python -m pytest tests/ -q` — all pass
-Run: `node --test tests/js/` — all pass
+Run: `node --test "tests/js/*.test.mjs"` — all pass
 Run: `python -m analysis.build_dashboard`
 
 Now go through the page against the dataviz anti-patterns, not just for crashes:
