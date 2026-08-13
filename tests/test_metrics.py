@@ -8,10 +8,17 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from analysis.metrics import (
+    MIN_CITIES_FOR_CONSISTENCY,
     PAYBACK_LOW_MAX,
     PAYBACK_MEDIUM_MAX,
+    SMALL_SAMPLE_MAX,
+    cities_per_region,
     payback_band_counts,
     payback_risk_band,
+    production_consistency,
+    regional_mean_roi,
+    regional_roi_rank,
+    small_sample_regions,
 )
 
 CSV = Path(__file__).resolve().parents[1] / "solar_energy_worldwide.csv"
@@ -54,9 +61,6 @@ def test_band_counts_always_include_all_three_keys():
     assert payback_band_counts(synthetic) == {"Low": 2, "Medium": 0, "High": 0}
 
 
-from analysis.metrics import regional_mean_roi, regional_roi_rank
-
-
 def test_rank_matches_verified_order(real):
     assert regional_roi_rank(real) == {
         "Middle East": 1,
@@ -93,15 +97,6 @@ def test_dense_rank_shares_rank_on_tie_without_skipping():
     assert ranks["A"] == 1
     assert ranks["B"] == 1
     assert ranks["C"] == 2  # dense: no gap after the tie
-
-
-from analysis.metrics import (
-    MIN_CITIES_FOR_CONSISTENCY,
-    SMALL_SAMPLE_MAX,
-    cities_per_region,
-    production_consistency,
-    small_sample_regions,
-)
 
 
 def test_consistency_matches_verified_values(real):
