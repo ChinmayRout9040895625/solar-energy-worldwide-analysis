@@ -94,10 +94,40 @@ High    ████████████████████████
 ## Build
 
 ```bash
-python -m analysis.build_data          # CSV  -> output/data.json   (validated)
-python -m analysis.build_dashboard     # JSON -> output/dashboard.html
+python -m analysis.build_data            # CSV  -> output/data.json   (validated)
+python -m analysis.build_dashboard       # JSON -> output/dashboard.html
+python -m analysis.build_powerbi         # JSON -> output/powerbi/*.pbip
 python -m analysis.render_readme_charts  # JSON -> the chart block above
 ```
+
+## Power BI
+
+`python -m analysis.build_powerbi` writes a Power BI Desktop project; open
+`output/powerbi/SolarEnergyWorldwide.pbip`.
+
+It emits **TMSL** (`model.bim`) and **PBIR-Legacy** (`report.json`) rather than the
+newer TMDL/PBIR folder formats, because those are preview features that older
+Desktop builds will not read without flags enabled. Both emitted formats are still
+plain JSON, so the generator validates everything it writes. A newer Desktop will
+offer to upgrade the project to TMDL/PBIR on first save.
+
+The 48 rows are embedded in the model as a literal M `#table` rather than read
+from the CSV. A file path inside a Power BI query is absolute, so a project
+pointing at this machine's CSV would break the moment it moved — the same
+self-containment rule the HTML dashboard follows.
+
+The DAX mirrors `analysis/metrics.py`: payback bands at the same 7 / 9 boundaries,
+dense regional ROI rank, and production consistency that returns BLANK under three
+cities instead of a misleading 1.00. Nothing executes DAX at build time, so those
+expressions are translations rather than verified computations — the build prints
+the figures to check against:
+
+| Where | Should read |
+|---|---|
+| Cities / CO₂ / installations cards | 48 · 208.35 t · 2,328,540 |
+| Payback risk | Low 5 · Medium 19 · High 24 |
+| Regional ROI Rank = 1 | Middle East |
+| Asia CO₂ | 54.72 — includes Dubai |
 
 Every build fails loud: a missing file, an unexpected column, a null, a rollup
 that does not reconcile, an external reference in the emitted HTML, or a missing
@@ -125,6 +155,7 @@ node --test "tests/js/*.test.mjs"   # chart geometry, rollups, filter state
 | `analysis/build_data.py` | Validation, reconciliation, `output/data.json` |
 | `analysis/build_dashboard.py` | Asset inlining, the self-containment gate, `output/dashboard.html` |
 | `analysis/dashboard_assets/` | The shell, stylesheet and JavaScript modules that get inlined |
+| `analysis/build_powerbi.py` | Generates the Power BI Desktop project (PBIP) from the payload |
 | `analysis/render_readme_charts.py` | Regenerates this README's chart block from the payload |
 | `tests/js/` | Chart geometry tests, plus a DOM shim that mounts the whole page |
 | `docs/superpowers/specs/` | The approved design |

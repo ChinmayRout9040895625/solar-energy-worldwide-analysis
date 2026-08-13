@@ -106,3 +106,30 @@ Added `tests/js/page.test.mjs` in the same change: it reads `ASSET_ORDER` out of
 `build_dashboard.py`, loads the modules in exactly that order against the DOM
 shim, and mounts them. Per-module tests could not have caught this, because each
 one loads only what it needs.
+
+## 2026-08-13 — Power BI added as a second medium, in TMSL + PBIR-Legacy
+
+The approved spec chose a self-contained HTML file and explicitly listed
+"Reproducing Power BI as a file format" as out of scope. That was reversed on
+request: the deliverable was expected to be a Power BI dashboard.
+
+Chose PBIP with a TMSL `model.bim` and a PBIR-Legacy `report.json`. The newer
+TMDL and PBIR folder formats diff far better and are publicly schema'd, but both
+are preview features gated behind Desktop flags, and the installed build is
+2.139 (Dec 2024) — roughly twenty months older than the schemas Microsoft now
+documents. TMSL and PBIR-Legacy are read natively by every Desktop since 2019
+and are still plain JSON, so the generator can validate everything it emits.
+Rejected: `.pbix`, which wraps a compiled Analysis Services model and cannot be
+authored by hand.
+
+Chose to embed all 48 rows in the model as a literal M `#table`. A file path in
+a Power BI query is absolute, so a generated project pointing at this machine's
+CSV would break as soon as it moved. Embedding costs ~20 KB and makes the
+project open anywhere — the same self-containment rule the HTML page follows.
+Rejected `Csv.Document(File.Contents(...))` for that reason.
+
+Limitation stated rather than hidden: nothing executes DAX at build time, so the
+measures are translations of `analysis/metrics.py`, not verified computations.
+The build prints the figures each card should show, and a test asserts that
+every measure a visual binds to actually exists in the model — which is the
+failure this generator is most likely to produce.
