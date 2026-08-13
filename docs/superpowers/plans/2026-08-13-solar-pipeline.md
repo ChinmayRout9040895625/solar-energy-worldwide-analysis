@@ -66,11 +66,11 @@
 - Consumes: nothing
 - Produces: `PAYBACK_LOW_MAX: float = 7.0`, `PAYBACK_MEDIUM_MAX: float = 9.0`, `payback_risk_band(years: float) -> str` returning exactly `"Low"`, `"Medium"`, or `"High"`, and `payback_band_counts(df: pd.DataFrame) -> dict[str, int]` returning all three keys always, zero-filled when a band is empty.
 
-- [ ] **Step 1: Create the package marker**
+- [x] **Step 1: Create the package marker**
 
 Create `analysis/__init__.py` as an empty file.
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `tests/test_metrics.py`:
 
@@ -131,12 +131,12 @@ def test_band_counts_always_include_all_three_keys():
     assert payback_band_counts(synthetic) == {"Low": 2, "Medium": 0, "High": 0}
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_metrics.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'analysis.metrics'`
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Create `analysis/metrics.py`:
 
@@ -177,12 +177,12 @@ def payback_band_counts(df: pd.DataFrame) -> dict[str, int]:
     return {band: int(counts.get(band, 0)) for band in BANDS}
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_metrics.py -v`
 Expected: 7 passed
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add analysis/__init__.py analysis/metrics.py tests/test_metrics.py
@@ -203,7 +203,7 @@ git commit -m "feat: add payback risk band classification"
 
 Dense rank means tied regions share a rank and the next rank is not skipped. Region names are the raw `Region` values, never recoded.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_metrics.py`:
 
@@ -249,12 +249,12 @@ def test_dense_rank_shares_rank_on_tie_without_skipping():
     assert ranks["C"] == 2  # dense: no gap after the tie
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_metrics.py -v`
 Expected: FAIL with `ImportError: cannot import name 'regional_mean_roi'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Append to `analysis/metrics.py`:
 
@@ -271,12 +271,12 @@ def regional_roi_rank(df: pd.DataFrame) -> dict[str, int]:
     return ranks.to_dict()
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_metrics.py -v`
 Expected: 11 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add analysis/metrics.py tests/test_metrics.py
@@ -297,7 +297,7 @@ git commit -m "feat: add regional ROI dense ranking"
 
 `None` for a region with fewer than 3 cities is load-bearing: a single-city region has zero variance, which would otherwise render as perfect consistency (1.0) and mislead the reader. Emitting `None` forces the dashboard to print n/a.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/test_metrics.py`:
 
@@ -383,12 +383,12 @@ def test_threshold_constants_are_ordered():
     assert MIN_CITIES_FOR_CONSISTENCY < SMALL_SAMPLE_MAX
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_metrics.py -v`
 Expected: FAIL with `ImportError: cannot import name 'MIN_CITIES_FOR_CONSISTENCY'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Append to `analysis/metrics.py`:
 
@@ -432,12 +432,12 @@ def production_consistency(df: pd.DataFrame) -> dict[str, float | None]:
     return result
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_metrics.py -v`
 Expected: 20 passed
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add analysis/metrics.py tests/test_metrics.py
@@ -462,7 +462,7 @@ git commit -m "feat: add production consistency with insufficient-sample rule"
 
 `consistency` is `None` where not computable. All emitted floats are rounded to 2 decimals; the unrounded values are used for sorting and ranking first.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_aggregate.py`:
 
@@ -630,12 +630,12 @@ def test_country_records_carry_one_region_each(real):
         assert record["region"] == subset["Region"].iloc[0]
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_aggregate.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'analysis.aggregate'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `analysis/aggregate.py`:
 
@@ -759,17 +759,17 @@ def country_records(df: pd.DataFrame) -> list[dict]:
     return records
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_aggregate.py -v`
 Expected: 19 passed
 
-- [ ] **Step 5: Run the whole suite to confirm nothing regressed**
+- [x] **Step 5: Run the whole suite to confirm nothing regressed**
 
 Run: `python -m pytest tests/ -q`
 Expected: all tests pass, including the 61 pre-existing harness tests
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add analysis/aggregate.py tests/test_aggregate.py
@@ -812,7 +812,7 @@ The emitted payload shape:
 
 Caveats live in the data rather than the HTML so the dashboard renders them from one source.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_build_data.py`:
 
@@ -956,12 +956,12 @@ def test_main_returns_one_on_validation_failure(tmp_path):
     assert main([str(tmp_path / "absent.csv"), str(tmp_path / "data.json")]) == 1
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_build_data.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'analysis.build_data'`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `analysis/build_data.py`:
 
@@ -1154,12 +1154,12 @@ if __name__ == "__main__":
 
 Note the `reconcile` call happens **before** the file is written, so a failed reconciliation never leaves a wrong `data.json` on disk.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_build_data.py -v`
 Expected: 16 passed
 
-- [ ] **Step 5: Ignore the generated artifact**
+- [x] **Step 5: Ignore the generated artifact**
 
 `output/data.json` is generated, so it does not belong in git. Add this line to `.gitignore`:
 
@@ -1169,7 +1169,7 @@ output/data.json
 
 Confirm `output/.gitkeep` exists so the directory is tracked; create it as an empty file if not.
 
-- [ ] **Step 6: Run the pipeline for real**
+- [x] **Step 6: Run the pipeline for real**
 
 Run: `python -m analysis.build_data`
 
@@ -1183,12 +1183,12 @@ Then confirm the failure path is real by pointing it at a nonexistent file:
 Run: `python -m analysis.build_data missing.csv output/scratch.json`
 Expected: `BUILD FAILED: source CSV not found: missing.csv` on stderr, exit code 1, and no `output/scratch.json` created.
 
-- [ ] **Step 7: Run the whole suite**
+- [x] **Step 7: Run the whole suite**
 
 Run: `python -m pytest tests/ -q`
 Expected: all tests pass — the 61 pre-existing harness tests plus the 55 added by this plan
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add analysis/build_data.py tests/test_build_data.py .gitignore output/.gitkeep

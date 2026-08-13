@@ -111,7 +111,7 @@ Data flows one direction: `data.json` → inlined payload → filter → rollup 
 
 `ASSET_ORDER` grows as later tasks add modules. Every later task that adds a JS file appends it here and adds an inline-marker assertion to `tests/test_build.py`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/test_build.py`:
 
@@ -316,12 +316,12 @@ def test_main_returns_one_on_failure(tmp_path):
     assert main([str(tmp_path / "absent.json"), str(tmp_path / "dashboard.html")]) == 1
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `python -m pytest tests/test_build.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'analysis.build_dashboard'`
 
-- [ ] **Step 3: Write the shell template**
+- [x] **Step 3: Write the shell template**
 
 Create `analysis/dashboard_assets/shell.html`:
 
@@ -396,7 +396,7 @@ Create `analysis/dashboard_assets/shell.html`:
 </html>
 ```
 
-- [ ] **Step 4: Write the stylesheet**
+- [x] **Step 4: Write the stylesheet**
 
 Create `analysis/dashboard_assets/css/dashboard.css`. Values are the dataviz reference palette; the region slots are the validated seven-slot order.
 
@@ -668,7 +668,7 @@ body {
 }
 ```
 
-- [ ] **Step 5: Write the boot script**
+- [x] **Step 5: Write the boot script**
 
 Create `analysis/dashboard_assets/js/boot.js`. This is the first asset in load order and owns the namespace; later tasks add modules that attach to it.
 
@@ -687,7 +687,7 @@ globalThis.SOLAR = globalThis.SOLAR || {};
 })(globalThis.SOLAR);
 ```
 
-- [ ] **Step 6: Write the assembler**
+- [x] **Step 6: Write the assembler**
 
 Create `analysis/build_dashboard.py`:
 
@@ -837,21 +837,21 @@ if __name__ == "__main__":
 
 `main` writes nothing on failure because `build` raises before `write_text` is reached, and `render_html` runs the gate before returning.
 
-- [ ] **Step 7: Run test to verify it passes**
+- [x] **Step 7: Run test to verify it passes**
 
 Run: `python -m pytest tests/test_build.py -v`
 Expected: 28 passed
 
 Note: `test_html_carries_no_link_or_script_src` and the scanner both reject `src=` anywhere in the document, including inside JS strings. No asset in this plan uses that substring; if a later task needs it, the fix is to rename the identifier, not to weaken the gate.
 
-- [ ] **Step 8: Build it and open it**
+- [x] **Step 8: Build it and open it**
 
 Run: `python -m analysis.build_dashboard`
 Expected: `wrote output/dashboard.html: <n> KB, self-contained`
 
 Open `output/dashboard.html` in a browser. Expected: masthead, empty KPI strip, three working-looking tabs (not yet wired), empty filter row, empty pages, empty caveat list. Nothing renders yet — that is correct for this task.
 
-- [ ] **Step 9: Ignore the generated artifact**
+- [x] **Step 9: Ignore the generated artifact**
 
 Add to `.gitignore` beneath the existing `output/data.json` line:
 
@@ -859,7 +859,7 @@ Add to `.gitignore` beneath the existing `output/data.json` line:
 output/dashboard.html
 ```
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add analysis/build_dashboard.py analysis/dashboard_assets tests/test_build.py .gitignore
@@ -891,7 +891,7 @@ git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "f
   - `REGION_SLOTS: string[]` — CSS custom-property names in fixed slot order
   - `regionColorVar(region, allRegions) -> string` — `var(--series-N)`, assigned by sorted region name so the mapping never depends on filter state
 
-- [ ] **Step 1: Write the test loader**
+- [x] **Step 1: Write the test loader**
 
 Create `tests/js/load.mjs`:
 
@@ -921,7 +921,7 @@ export function payload() {
 }
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Create `tests/js/core.test.mjs`:
 
@@ -1035,12 +1035,12 @@ test("slot list is the seven validated categorical slots", () => {
 });
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `node --test tests/js/core.test.mjs`
 Expected: FAIL — `ENOENT` on `core.js`
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Create `analysis/dashboard_assets/js/core.js`:
 
@@ -1137,12 +1137,12 @@ Create `analysis/dashboard_assets/js/core.js`:
 
 `regionColorVar` takes the *full* region list from the payload, never the filtered list — `app.js` passes `payload.regions.map(r => r.region)` every time.
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `node --test tests/js/core.test.mjs`
 Expected: 17 pass, 0 fail
 
-- [ ] **Step 6: Register the asset**
+- [x] **Step 6: Register the asset**
 
 In `analysis/build_dashboard.py`, append `"js/core.js"` to `ASSET_ORDER`:
 
@@ -1154,7 +1154,7 @@ ASSET_ORDER = (
 )
 ```
 
-- [ ] **Step 7: Bridge the JS suite into pytest**
+- [x] **Step 7: Bridge the JS suite into pytest**
 
 Create `tests/test_dashboard_js.py`:
 
@@ -1198,7 +1198,7 @@ def test_javascript_suite_passes():
 
 The skip is deliberate and narrow: a machine without node still runs the Python suite, and the skip message says exactly what went unverified.
 
-- [ ] **Step 8: Run both suites**
+- [x] **Step 8: Run both suites**
 
 Run: `python -m pytest tests/ -q`
 Expected: all pass, 2 new tests in `test_dashboard_js.py`
@@ -1206,7 +1206,7 @@ Expected: all pass, 2 new tests in `test_dashboard_js.py`
 Run: `node --test "tests/js/*.test.mjs"`
 Expected: 17 pass
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add analysis/dashboard_assets/js/core.js analysis/build_dashboard.py tests/js tests/test_dashboard_js.py
@@ -1238,7 +1238,7 @@ Why this module exists: a payback-risk filter changes which cities are in a regi
 
 `riskCountsOf` counts the `risk_band` string that Python already put on each city record. It does not re-derive the band — one classifier, in `analysis/metrics.py`, is the whole point.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/js/rollup.test.mjs`:
 
@@ -1394,12 +1394,12 @@ test("an empty selection rolls up to nothing, not to NaN", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test tests/js/rollup.test.mjs`
 Expected: FAIL — `ENOENT` on `rollup.js`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `analysis/dashboard_assets/js/rollup.js`:
 
@@ -1512,23 +1512,23 @@ Create `analysis/dashboard_assets/js/rollup.js`:
 })(globalThis.SOLAR);
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test tests/js/rollup.test.mjs`
 Expected: 15 pass, 0 fail
 
 If the region- or country-order assertions fail, the cause is a tie broken differently by `localeCompare` versus Python's string sort — fix the JS comparator, never the Python side; `data.json` is the reference.
 
-- [ ] **Step 5: Register the asset**
+- [x] **Step 5: Register the asset**
 
 In `analysis/build_dashboard.py`, append `"js/rollup.js"` to `ASSET_ORDER` after `"js/core.js"`.
 
-- [ ] **Step 6: Run the whole suite**
+- [x] **Step 6: Run the whole suite**
 
 Run: `python -m pytest tests/ -q` — all pass
 Run: `node --test "tests/js/*.test.mjs"` — 32 pass
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add analysis/dashboard_assets/js/rollup.js analysis/build_dashboard.py tests/js/rollup.test.mjs
@@ -1565,7 +1565,7 @@ git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "f
 
 `render` and `table` are both optional on a chart: `render` draws SVG into the container, `table` returns `{caption, columns, rows}` for the table-view twin. Later tasks add charts; this task ships the machinery plus zero charts, and the page must still assemble cleanly.
 
-- [ ] **Step 1: Write the DOM shim**
+- [x] **Step 1: Write the DOM shim**
 
 Create `tests/js/fakedom.mjs`. It implements only what the render layer uses — enough to prove the page assembles, not a browser.
 
@@ -1705,7 +1705,7 @@ export function makeDocument(payload) {
 }
 ```
 
-- [ ] **Step 2: Write the failing filter test**
+- [x] **Step 2: Write the failing filter test**
 
 Create `tests/js/filters.test.mjs`:
 
@@ -1791,7 +1791,7 @@ test("the readout names the slice in plain words", () => {
 });
 ```
 
-- [ ] **Step 3: Write the failing app test**
+- [x] **Step 3: Write the failing app test**
 
 Create `tests/js/app.test.mjs`:
 
@@ -1951,12 +1951,12 @@ test("mount survives a page with no registered charts", () => {
 });
 ```
 
-- [ ] **Step 4: Run the tests to verify they fail**
+- [x] **Step 4: Run the tests to verify they fail**
 
 Run: `node --test tests/js/filters.test.mjs tests/js/app.test.mjs`
 Expected: FAIL — `ENOENT` on `filters.js`
 
-- [ ] **Step 5: Write the filter module**
+- [x] **Step 5: Write the filter module**
 
 Create `analysis/dashboard_assets/js/filters.js`:
 
@@ -2023,7 +2023,7 @@ Create `analysis/dashboard_assets/js/filters.js`:
 })(globalThis.SOLAR);
 ```
 
-- [ ] **Step 6: Write the render helpers**
+- [x] **Step 6: Write the render helpers**
 
 Create `analysis/dashboard_assets/js/render.js`. Later tasks extend this file with the SVG drawing helpers; this task ships the element factories and the table twin.
 
@@ -2098,7 +2098,7 @@ Create `analysis/dashboard_assets/js/render.js`. Later tasks extend this file wi
 })(globalThis.SOLAR);
 ```
 
-- [ ] **Step 7: Write the app**
+- [x] **Step 7: Write the app**
 
 Create `analysis/dashboard_assets/js/app.js`:
 
@@ -2313,12 +2313,12 @@ Create `analysis/dashboard_assets/js/app.js`:
 
 The auto-mount guard at the bottom is what makes the file work in a browser and stay inert under `node --test`, where there is no `document`.
 
-- [ ] **Step 8: Run the tests to verify they pass**
+- [x] **Step 8: Run the tests to verify they pass**
 
 Run: `node --test tests/js/filters.test.mjs tests/js/app.test.mjs`
 Expected: 24 pass, 0 fail
 
-- [ ] **Step 9: Register the assets and extend the Python test**
+- [x] **Step 9: Register the assets and extend the Python test**
 
 In `analysis/build_dashboard.py`, `ASSET_ORDER` becomes:
 
@@ -2354,7 +2354,7 @@ def test_page_hosts_are_empty_in_the_emitted_html(html):
     assert "card" not in html[start:end]
 ```
 
-- [ ] **Step 10: Run everything and open the page**
+- [x] **Step 10: Run everything and open the page**
 
 Run: `python -m pytest tests/ -q` — all pass
 Run: `node --test "tests/js/*.test.mjs"` — 56 pass
@@ -2362,7 +2362,7 @@ Run: `python -m analysis.build_dashboard`
 
 Open `output/dashboard.html`. Expected: KPI strip showing 48 / 30 / 208.35 / 2.3M / 520,875; seven region chips each with its own colour key and a check; three risk chips; tabs that switch the visible (empty) page; reset and table toggle present; five caveats in the footer; theme toggle flips light and dark.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add analysis/dashboard_assets/js analysis/build_dashboard.py tests/js tests/test_build.py
@@ -2391,7 +2391,7 @@ git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "f
 
 Bar rules in force: thickness capped at 12px (well under the 24px ceiling), 4px rounded data-end with a square baseline, a 2px surface gap between the stacked segments, hairline solid gridlines. Values sit at the bar tip. With more than twelve bars, only the top three and the last are direct-labelled — a number on all 48 is the anti-pattern — and the table twin carries every value, which is also the relief the contrast WARN obliges.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/js/bars.test.mjs`:
 
@@ -2526,12 +2526,12 @@ test("the registered charts include the five bar charts by id", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test tests/js/bars.test.mjs`
 Expected: FAIL — `ENOENT` on `charts_bars.js`
 
-- [ ] **Step 3: Append the axis helper to `render.js`**
+- [x] **Step 3: Append the axis helper to `render.js`**
 
 Add to `analysis/dashboard_assets/js/render.js`, inside the same IIFE, before the closing `})`:
 
@@ -2567,7 +2567,7 @@ Add to `analysis/dashboard_assets/js/render.js`, inside the same IIFE, before th
   };
 ```
 
-- [ ] **Step 4: Append the SVG ink rules to the stylesheet**
+- [x] **Step 4: Append the SVG ink rules to the stylesheet**
 
 Add to the end of `analysis/dashboard_assets/css/dashboard.css`:
 
@@ -2586,7 +2586,7 @@ Add to the end of `analysis/dashboard_assets/css/dashboard.css`:
 .plot .note { fill: var(--text-muted); font-style: italic; }
 ```
 
-- [ ] **Step 5: Write the bars module**
+- [x] **Step 5: Write the bars module**
 
 Create `analysis/dashboard_assets/js/charts_bars.js`:
 
@@ -3005,7 +3005,7 @@ Create `analysis/dashboard_assets/js/charts_bars.js`:
 })(globalThis.SOLAR);
 ```
 
-- [ ] **Step 6: Add the tooltip attachment point**
+- [x] **Step 6: Add the tooltip attachment point**
 
 `drawBars` calls `S.attachTip`. Add it to `analysis/dashboard_assets/js/render.js`, inside the same IIFE. The full tooltip element is built in Task 9; this is the hook plus a working default.
 
@@ -3025,12 +3025,12 @@ Create `analysis/dashboard_assets/js/charts_bars.js`:
   S.moveTip = function () {};
 ```
 
-- [ ] **Step 7: Run test to verify it passes**
+- [x] **Step 7: Run test to verify it passes**
 
 Run: `node --test tests/js/bars.test.mjs`
 Expected: 17 pass, 0 fail
 
-- [ ] **Step 8: Register the asset and rebuild**
+- [x] **Step 8: Register the asset and rebuild**
 
 In `analysis/build_dashboard.py`, insert `"js/charts_bars.js"` into `ASSET_ORDER` **before** `"js/app.js"`.
 
@@ -3042,7 +3042,7 @@ Open `output/dashboard.html`. Expected: page 1 shows the 48-bar ROI chart with D
 
 Check by eye before continuing: no label overflows its bar, no axis label is clipped by the card, and the bars do not touch each other.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js/bars.test.mjs
@@ -3067,7 +3067,7 @@ git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "f
 
 The n/a rule is the whole point of the consistency chart: Middle East has one city, so its consistency is `null`, and a `null` must render as the words "n/a — 1 city" on the row rather than as a dot at zero or a dot at one. Both readings would be lies. Small-sample regions (under 5 cities) keep their dot but carry an `n=3`-style note.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/js/dots.test.mjs`:
 
@@ -3161,12 +3161,12 @@ test("the consistency table spells out n/a rather than leaving a blank", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test tests/js/dots.test.mjs`
 Expected: FAIL — `ENOENT` on `charts_dots.js`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `analysis/dashboard_assets/js/charts_dots.js`:
 
@@ -3373,12 +3373,12 @@ Create `analysis/dashboard_assets/js/charts_dots.js`:
 })(globalThis.SOLAR);
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test tests/js/dots.test.mjs`
 Expected: 10 pass, 0 fail
 
-- [ ] **Step 5: Register the asset, rebuild, and look at it**
+- [x] **Step 5: Register the asset, rebuild, and look at it**
 
 Insert `"js/charts_dots.js"` into `ASSET_ORDER` before `"js/app.js"`.
 
@@ -3387,7 +3387,7 @@ Run: `python -m analysis.build_dashboard`
 
 Open the page. Expected: page 1 gains the ranked ROI dot plot with Middle East at #1 carrying `n=1`; page 2 gains the consistency plot where Middle East reads `n/a — 1 city` rather than a dot. Filter to Oceania and confirm the consistency chart still computes (3 cities) while a filter down to 2 cities flips it to n/a.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js/dots.test.mjs
@@ -3419,7 +3419,7 @@ git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "f
 
 Each cloud carries its correlation as a written callout — the numbers come from `payload.correlations`, computed by Python, never recomputed here.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/js/scatter.test.mjs`:
 
@@ -3551,12 +3551,12 @@ test("the correlation callouts quote the payload, never a recomputed number", ()
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test tests/js/scatter.test.mjs`
 Expected: FAIL — `ENOENT` on `charts_scatter.js`
 
-- [ ] **Step 3: Append the y-axis helper to `render.js`**
+- [x] **Step 3: Append the y-axis helper to `render.js`**
 
 Add inside the `render.js` IIFE:
 
@@ -3595,7 +3595,7 @@ And append to `dashboard.css`:
 .plot .context-dot { fill: var(--context); }
 ```
 
-- [ ] **Step 4: Write the implementation**
+- [x] **Step 4: Write the implementation**
 
 Create `analysis/dashboard_assets/js/charts_scatter.js`:
 
@@ -3923,12 +3923,12 @@ Create `analysis/dashboard_assets/js/charts_scatter.js`:
 
 The installations axis is square-rooted because installations span 150 to 609,000; on a linear axis 44 of 48 cities collapse against the left edge and the chart shows nothing. The axis title says so, and the tick labels are printed back in real installation counts.
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `node --test tests/js/scatter.test.mjs`
 Expected: 14 pass, 0 fail
 
-- [ ] **Step 6: Register, rebuild, and look at it**
+- [x] **Step 6: Register, rebuild, and look at it**
 
 Insert `"js/charts_scatter.js"` into `ASSET_ORDER` before `"js/app.js"`.
 
@@ -3937,7 +3937,7 @@ Run: `python -m analysis.build_dashboard`
 
 Open the page. Expected: page 1 gains the installations/ROI cloud with Phoenix, Dubai and Cairo labelled and the 0.137 callout beneath; page 2 gains seven region panels on shared axes; page 3 gains the viability cloud. Check by eye that facet titles do not collide with the panel above and that no axis label is clipped.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js/scatter.test.mjs
@@ -3964,7 +3964,7 @@ git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "f
 
 There is no basemap: a coastline file is tens of kilobytes of geometry for a decorative outline, and no external request is permitted. Context comes from a labelled graticule — meridians and parallels every 30°, with the equator and both tropics drawn as named guides. That is honest about what the projection is and costs nothing. Bubbles are area-proportional, so radius scales with the square root of installations; scaling radius linearly would overstate China by a factor of forty.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/js/map.test.mjs`:
 
@@ -4056,12 +4056,12 @@ test("the map chart is registered on the sustainability page", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test tests/js/map.test.mjs`
 Expected: FAIL — `ENOENT` on `charts_map.js`
 
-- [ ] **Step 3: Write the implementation**
+- [x] **Step 3: Write the implementation**
 
 Create `analysis/dashboard_assets/js/charts_map.js`:
 
@@ -4223,12 +4223,12 @@ Create `analysis/dashboard_assets/js/charts_map.js`:
 })(globalThis.SOLAR);
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `node --test tests/js/map.test.mjs`
 Expected: 13 pass, 0 fail
 
-- [ ] **Step 5: Register, rebuild, and look at it**
+- [x] **Step 5: Register, rebuild, and look at it**
 
 Insert `"js/charts_map.js"` into `ASSET_ORDER` before `"js/app.js"`.
 
@@ -4237,7 +4237,7 @@ Run: `python -m analysis.build_dashboard`
 
 Open page 3. Expected: a recognisable world scatter — a European cluster, a North American arc, Sydney and Melbourne low-right — with China's bubble the largest. Confirm the graticule reads as recessive hairlines and the tropic labels do not sit on top of a bubble in the Atlantic.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js/map.test.mjs
@@ -4269,7 +4269,7 @@ The matrix is the reference dashboard's one genuinely useful table, and the one 
 
 Tooltip contract: value first in strong type, label second; rows keyed by a short line of the series colour; all text inserted with `textContent`, because city and country names are CSV data. The tooltip never carries a value that is not also in the table twin.
 
-- [ ] **Step 1: Write the failing matrix test**
+- [x] **Step 1: Write the failing matrix test**
 
 Create `tests/js/matrix.test.mjs`:
 
@@ -4380,7 +4380,7 @@ test("the matrix chart is registered on the sustainability page", () => {
 });
 ```
 
-- [ ] **Step 2: Write the failing tooltip test**
+- [x] **Step 2: Write the failing tooltip test**
 
 Create `tests/js/tooltip.test.mjs`:
 
@@ -4438,12 +4438,12 @@ test("a tooltip with no detail rows still renders", () => {
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test tests/js/matrix.test.mjs tests/js/tooltip.test.mjs`
 Expected: FAIL — `ENOENT` on `charts_matrix.js`, and `S.ensureTip is not a function`
 
-- [ ] **Step 4: Replace the tooltip stubs in `render.js`**
+- [x] **Step 4: Replace the tooltip stubs in `render.js`**
 
 Delete the three stub lines added in Task 5 (`S.showTip = function () {};` and its two neighbours) and put this in their place:
 
@@ -4493,7 +4493,7 @@ Delete the three stub lines added in Task 5 (`S.showTip = function () {};` and i
   };
 ```
 
-- [ ] **Step 5: Append the matrix and tooltip styles**
+- [x] **Step 5: Append the matrix and tooltip styles**
 
 Add to `analysis/dashboard_assets/css/dashboard.css`:
 
@@ -4516,7 +4516,7 @@ Add to `analysis/dashboard_assets/css/dashboard.css`:
 .tip-row-value { font-variant-numeric: tabular-nums; }
 ```
 
-- [ ] **Step 6: Write the matrix module**
+- [x] **Step 6: Write the matrix module**
 
 Create `analysis/dashboard_assets/js/charts_matrix.js`:
 
@@ -4681,12 +4681,12 @@ Create `analysis/dashboard_assets/js/charts_matrix.js`:
 
 The matrix has no separate `table` twin: it *is* a table.
 
-- [ ] **Step 7: Run the tests to verify they pass**
+- [x] **Step 7: Run the tests to verify they pass**
 
 Run: `node --test tests/js/matrix.test.mjs tests/js/tooltip.test.mjs`
 Expected: 17 pass, 0 fail
 
-- [ ] **Step 8: Register, rebuild, and check the interaction by hand**
+- [x] **Step 8: Register, rebuild, and check the interaction by hand**
 
 Insert `"js/charts_matrix.js"` into `ASSET_ORDER` before `"js/app.js"`.
 
@@ -4700,7 +4700,7 @@ Open the page and verify by hand:
 - The United States row reads `26.64`, not `26 64`.
 - The tooltip near the right edge flips to the left of the pointer instead of leaving the window.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js
@@ -4730,7 +4730,7 @@ git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "f
 
 The hero states the finding the reference dashboard never surfaced: the twelve largest deployments and the twelve best returns are almost disjoint sets. A connector is drawn only for a city that appears in both columns, so the emptiness between the columns is the message. The correlation `0.137` sits between them as the page's single hero figure.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/js/mismatch.test.mjs`:
 
@@ -4822,12 +4822,12 @@ test("the hero quotes the correlation from the payload", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `node --test tests/js/mismatch.test.mjs`
 Expected: FAIL — `ENOENT` on `charts_mismatch.js`
 
-- [ ] **Step 3: Write the hero module**
+- [x] **Step 3: Write the hero module**
 
 Create `analysis/dashboard_assets/js/charts_mismatch.js`:
 
@@ -4981,7 +4981,7 @@ Create `analysis/dashboard_assets/js/charts_mismatch.js`:
 })(globalThis.SOLAR);
 ```
 
-- [ ] **Step 4: Append the hero styles**
+- [x] **Step 4: Append the hero styles**
 
 Add to `analysis/dashboard_assets/css/dashboard.css`:
 
@@ -4995,7 +4995,7 @@ Add to `analysis/dashboard_assets/css/dashboard.css`:
 
 `.hero-figure` deliberately does not set `tabular-nums`: proportional figures are correct for a large standalone number.
 
-- [ ] **Step 5: Register the asset — order matters**
+- [x] **Step 5: Register the asset — order matters**
 
 In `analysis/build_dashboard.py`, `charts_mismatch.js` must load **before** `charts_bars.js` so the hero registers first and renders at the top of page 1. Final `ASSET_ORDER`:
 
@@ -5017,12 +5017,12 @@ ASSET_ORDER = (
 )
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `node --test tests/js/mismatch.test.mjs`
 Expected: 11 pass, 0 fail
 
-- [ ] **Step 7: Add the final structural assertions**
+- [x] **Step 7: Add the final structural assertions**
 
 Append to `tests/test_build.py`:
 
@@ -5058,7 +5058,7 @@ def test_the_page_stays_under_the_size_budget(tmp_path):
     assert size_kb < 400, f"dashboard is {size_kb:.0f} KB"
 ```
 
-- [ ] **Step 8: Run everything and read the page properly**
+- [x] **Step 8: Run everything and read the page properly**
 
 Run: `python -m pytest tests/ -q` — all pass
 Run: `node --test "tests/js/*.test.mjs"` — all pass
@@ -5078,7 +5078,7 @@ Now go through the page against the dataviz anti-patterns, not just for crashes:
 
 Fix anything this pass finds before committing.
 
-- [ ] **Step 9: Write the README**
+- [x] **Step 9: Write the README**
 
 Create `README.md`:
 
@@ -5154,7 +5154,7 @@ preserved rather than recoded, so totals reconcile to the raw CSV. The sample is
 48 cities — Middle East is one city, Africa and Oceania are three each.
 ```
 
-- [ ] **Step 10: Record the decisions**
+- [x] **Step 10: Record the decisions**
 
 Append to `docs/DECISIONS.md`:
 
@@ -5204,7 +5204,7 @@ square-rooted, the axis title says so, and ticks are printed as real counts.
 and harder to read back to counts.
 ```
 
-- [ ] **Step 11: Update the intent block in `docs/STATE.md`**
+- [x] **Step 11: Update the intent block in `docs/STATE.md`**
 
 Edit **only** between `<!-- INTENT:BEGIN -->` and `<!-- INTENT:END -->`. The facts block above it is script-owned:
 
@@ -5217,7 +5217,7 @@ Edit **only** between `<!-- INTENT:BEGIN -->` and `<!-- INTENT:END -->`. The fac
   then `python -m analysis.build_dashboard` reproduces both outputs from the CSV.
 ```
 
-- [ ] **Step 12: Final verification, then commit**
+- [x] **Step 12: Final verification, then commit**
 
 Run these and read the output rather than assuming it:
 
