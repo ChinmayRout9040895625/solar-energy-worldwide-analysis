@@ -78,6 +78,31 @@
     });
   };
 
+  S.drawAxisY = function (spec, format) {
+    const group = S.svgEl("g", { class: "axis" });
+    for (const tick of spec.yTicks) {
+      group.appendChild(S.svgEl("g", { class: "tick" }, [
+        S.svgEl("line", {
+          class: "gridline",
+          x1: spec.plotLeft, x2: spec.plotRight, y1: tick.y, y2: tick.y,
+        }),
+        S.svgEl("text", {
+          x: spec.plotLeft - 10, y: tick.y + 4, "text-anchor": "end", text: format(tick.value),
+        }),
+      ]));
+    }
+    return group;
+  };
+
+  S.axisTitle = function (text, x, y, anchor, rotate) {
+    return S.svgEl("text", {
+      class: "axis-title",
+      x: x, y: y, "text-anchor": anchor || "middle",
+      transform: rotate ? "rotate(-90 " + x + " " + y + ")" : null,
+      text: text,
+    });
+  };
+
   S.tipModel = null;  // last model requested, exposed for tests
 
   S.attachTip = function (node, modelFn) {
