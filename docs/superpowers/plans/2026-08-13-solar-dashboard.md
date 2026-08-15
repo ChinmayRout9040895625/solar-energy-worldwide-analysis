@@ -29,7 +29,7 @@
   - Every chart has a table-view twin. Tooltips enhance, never gate.
 - **One filter row, above everything it scopes.** Filters re-render every chart, stat and table on the page.
 - **Theme:** complete light palette on bare `:root`; dark redefined under both `@media (prefers-color-scheme: dark)` guarded with `:root:not([data-theme="light"])` *and* `:root[data-theme="dark"]`.
-- Git identity is not configured globally. Commit with `git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "..."`.
+- Git identity is configured globally; plain `git commit -m "..."` is fine.
 - Run Python tests with `python -m pytest`. Run JS tests with `node --test "tests/js/*.test.mjs"`. Windows; use forward slashes in paths.
 
 ## Verified facts to assert (do not recompute expectations)
@@ -863,7 +863,7 @@ output/dashboard.html
 
 ```bash
 git add analysis/build_dashboard.py analysis/dashboard_assets tests/test_build.py .gitignore
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add self-contained dashboard assembler and shell"
+git commit -m "feat: add self-contained dashboard assembler and shell"
 ```
 
 ---
@@ -1210,7 +1210,7 @@ Expected: 17 pass
 
 ```bash
 git add analysis/dashboard_assets/js/core.js analysis/build_dashboard.py tests/js tests/test_dashboard_js.py
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add JS core scales and formatters with node test bridge"
+git commit -m "feat: add JS core scales and formatters with node test bridge"
 ```
 
 ---
@@ -1532,7 +1532,7 @@ Run: `node --test "tests/js/*.test.mjs"` — 32 pass
 
 ```bash
 git add analysis/dashboard_assets/js/rollup.js analysis/build_dashboard.py tests/js/rollup.test.mjs
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add client-side rollups reconciled against the Python output"
+git commit -m "feat: add client-side rollups reconciled against the Python output"
 ```
 
 ---
@@ -2366,7 +2366,7 @@ Open `output/dashboard.html`. Expected: KPI strip showing 48 / 30 / 208.35 / 2.3
 
 ```bash
 git add analysis/dashboard_assets/js analysis/build_dashboard.py tests/js tests/test_build.py
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add filter state, chip row, and the chart registry"
+git commit -m "feat: add filter state, chip row, and the chart registry"
 ```
 
 ---
@@ -3046,7 +3046,7 @@ Check by eye before continuing: no label overflows its bar, no axis label is cli
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js/bars.test.mjs
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add ranked bar charts and the stacked payback-risk chart"
+git commit -m "feat: add ranked bar charts and the stacked payback-risk chart"
 ```
 
 ---
@@ -3391,7 +3391,7 @@ Open the page. Expected: page 1 gains the ranked ROI dot plot with Middle East a
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js/dots.test.mjs
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add regional ROI rank and production consistency dot plots"
+git commit -m "feat: add regional ROI rank and production consistency dot plots"
 ```
 
 ---
@@ -3941,7 +3941,7 @@ Open the page. Expected: page 1 gains the installations/ROI cloud with Phoenix, 
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js/scatter.test.mjs
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add scatter clouds and the faceted irradiance small-multiple"
+git commit -m "feat: add scatter clouds and the faceted irradiance small-multiple"
 ```
 
 ---
@@ -4241,7 +4241,7 @@ Open page 3. Expected: a recognisable world scatter — a European cluster, a No
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js/map.test.mjs
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add the equirectangular world map with area-proportional bubbles"
+git commit -m "feat: add the equirectangular world map with area-proportional bubbles"
 ```
 
 ---
@@ -4704,7 +4704,7 @@ Open the page and verify by hand:
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests/js
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add the expandable region matrix and the tooltip layer"
+git commit -m "feat: add the expandable region matrix and the tooltip layer"
 ```
 
 ---
@@ -5234,7 +5234,7 @@ Then commit:
 
 ```bash
 git add analysis/dashboard_assets analysis/build_dashboard.py tests README.md docs/DECISIONS.md
-git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "feat: add the mismatch hero, README, and decision records"
+git commit -m "feat: add the mismatch hero, README, and decision records"
 ```
 
 ---

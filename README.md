@@ -96,9 +96,14 @@ High    ████████████████████████
 ```bash
 python -m analysis.build_data            # CSV  -> output/data.json   (validated)
 python -m analysis.build_dashboard       # JSON -> output/dashboard.html
-python -m analysis.build_powerbi         # JSON -> output/powerbi/*.pbip
+python -m analysis.build_pbit            # JSON -> output/powerbi/*.pbit  (Power BI)
 python -m analysis.render_readme_charts  # JSON -> the chart block above
 ```
+
+`analysis/build_powerbi.py` also exists and emits a PBIP *project* folder. It is
+kept because it owns the semantic model and the DAX that `build_pbit` reuses,
+but the project's report half only loads with the PBIR preview feature enabled.
+**Use `build_pbit` for the working report.**
 
 ## Power BI
 
@@ -163,7 +168,8 @@ node --test "tests/js/*.test.mjs"   # chart geometry, rollups, filter state
 | `analysis/build_data.py` | Validation, reconciliation, `output/data.json` |
 | `analysis/build_dashboard.py` | Asset inlining, the self-containment gate, `output/dashboard.html` |
 | `analysis/dashboard_assets/` | The shell, stylesheet and JavaScript modules that get inlined |
-| `analysis/build_powerbi.py` | Generates the Power BI Desktop project (PBIP) from the payload |
+| `analysis/build_powerbi.py` | The semantic model and DAX; also emits a PBIP project (report half needs the PBIR preview) |
+| `analysis/build_pbit.py` | The working Power BI report — patches a Desktop-exported `.pbit` skeleton |
 | `analysis/render_readme_charts.py` | Regenerates this README's chart block from the payload |
 | `tests/js/` | Chart geometry tests, plus a DOM shim that mounts the whole page |
 | `docs/superpowers/specs/` | The approved design |

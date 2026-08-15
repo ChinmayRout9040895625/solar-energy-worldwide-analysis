@@ -38,7 +38,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import sys
 import uuid
 import zipfile
@@ -54,9 +53,6 @@ CONTENT_TYPES_PART = "[Content_Types].xml"
 
 THEME_NAME = "SolarEditorial"
 THEME_SOURCE = Path(__file__).resolve().parent / "dashboard_assets" / "powerbi_theme.json"
-# Structure copied from a real .pbix that ships its theme, not inferred:
-# a SharedResources package (type 2) pointing at BaseThemes/<name>.json.
-THEME_PART = f"Report/StaticResources/SharedResources/BaseThemes/{THEME_NAME}.json"
 
 
 def _drop_security_override(raw: bytes) -> bytes:
@@ -64,6 +60,7 @@ def _drop_security_override(raw: bytes) -> bytes:
     text = raw.decode("utf-8")
     marker = '<Override PartName="/SecurityBindings" ContentType="" />'
     return text.replace(marker, "").encode("utf-8")
+
 
 ALIAS = "c"
 ENTITY = "Cities"
@@ -342,13 +339,14 @@ def _page_sustainability() -> list[dict]:
         # Same 240px height as the other pages; at 100px the lists clipped.
         _slicer(864, 16, 190, 240, "Region", "Region"),
         _slicer(1066, 16, 190, 240, "Payback Risk Band", "Payback risk"),
-        # A tableEx was tried here three times and rendered its header with no
-        # rows every time, including with the Subtotal and Window binding copied
-        # from a working table. Rather than ship a blank box, the region
-        # breakdown is charted. Add a table by hand if the row detail is wanted:
-        # insert a Table visual and drag Region, Country, City onto it.
-        # Mirrors the other two pages: tall left chart, two stacked in the
+        # Same grid as the other two pages: tall left chart, two stacked in the
         # middle, slicers over a scatter on the right.
+        #
+        # There is deliberately no table. A tableEx was tried three times and
+        # rendered its header with no rows every time, including with the
+        # Subtotal and Window binding copied from a working table, so the region
+        # breakdown is charted rather than shipping a blank box. For row-level
+        # detail, insert a Table visual and drag Region, Country and City onto it.
         _bar(16, 128, 500, 560, "CO2 avoided by country", "Country", "Total CO2 Tons", GREEN),
         _bar(528, 128, 320, 270, "CO2 avoided by region", "Region", "Total CO2 Tons", GREEN),
         _bar(528, 410, 320, 278, "Installations by region", "Region", "Total Installations"),

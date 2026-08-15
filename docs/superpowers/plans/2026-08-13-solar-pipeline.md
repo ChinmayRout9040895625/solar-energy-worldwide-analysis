@@ -19,7 +19,7 @@
 - **Production consistency:** `1 - (σ / μ)` of `Avg_Annual_Production_kWh` within region, sample standard deviation (`ddof=1`), clamped to `[0.0, 1.0]`. `None` for regions with fewer than 3 cities. Small-sample marker for fewer than 5.
 - **Regional ROI rank:** dense rank on mean `ROI_Percentage`, descending, 1-based.
 - **Money and score rounding:** round floats to 2 decimals in emitted JSON. Never round intermediate values used in further arithmetic.
-- Git identity is not configured globally. Commit with `git -c user.name="chinm" -c user.email="mishraswagat2804@gmail.com" commit -m "..."`.
+- Git identity is configured globally; plain `git commit -m "..."` is fine.
 - Run tests with `python -m pytest`. Windows; use forward slashes in paths.
 
 ## Verified dataset facts (assert these, do not recompute expectations)
