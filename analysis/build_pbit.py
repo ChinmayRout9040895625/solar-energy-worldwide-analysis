@@ -93,14 +93,29 @@ def _visual(
     height: int,
     title: str,
     roles: list[tuple[str, str, str]],
+    sort_by: str | None = None,
 ) -> dict:
-    """One visualContainer. `roles` is [(role, kind, property), ...] in order."""
+    """One visualContainer. `roles` is [(role, kind, property), ...] in order.
+
+    `sort_by` names a measure to order descending — without it Power BI falls
+    back to sorting by the category alphabetically.
+    """
     selects = [_select(kind, prop) for _r, kind, prop in roles]
     query = {
         "Version": 2,
         "From": [{"Name": ALIAS, "Entity": ENTITY, "Type": 0}],
         "Select": selects,
     }
+    if sort_by:
+        query["OrderBy"] = [{
+            "Direction": 2,  # descending
+            "Expression": {
+                "Measure": {
+                    "Expression": {"SourceRef": {"Source": ALIAS}},
+                    "Property": sort_by,
+                }
+            },
+        }]
 
     projections: dict[str, list[dict]] = {}
     for index, (role, _kind, prop) in enumerate(roles):
@@ -148,7 +163,7 @@ def _visual(
     transform_selects = []
     for index, (role, kind, prop) in enumerate(roles):
         ordering.setdefault(role, []).append(index)
-        transform_selects.append({
+        select = {
             "displayName": prop,
             "queryName": f"{ENTITY}.{prop}",
             "roles": {role: True},
@@ -157,7 +172,11 @@ def _visual(
                 "underlyingType": TYPE_TEXT if kind == "Column" else TYPE_NUMBER,
             },
             "expr": {kind: {"Expression": {"SourceRef": {"Entity": ENTITY}}, "Property": prop}},
-        })
+        }
+        if sort_by and prop == sort_by:
+            select["sort"] = 2
+            select["sortOrder"] = 0
+        transform_selects.append(select)
 
     transforms = {
         "objects": {},
@@ -186,7 +205,7 @@ def _bar(x, y, w, h, title, category, measure):
     return _visual("clusteredBarChart", x, y, w, h, title, [
         ("Category", "Column", category),
         ("Y", "Measure", measure),
-    ])
+    ], sort_by=measure)
 
 
 def _scatter(x, y, w, h, title, detail, xm, ym):
@@ -283,6 +302,11 @@ def layout_for(payload: dict, skeleton_layout: dict) -> dict:
 
     layout = dict(skeleton_layout)
     layout["sections"] = sections
+    # Open on the financial page. Without this the skeleton's config names no
+    # active section and Desktop picks one for itself.
+    config = json.loads(layout.get("config") or "{}")
+    config["activeSectionIndex"] = 0
+    layout["config"] = json.dumps(config)
     return layout
 
 

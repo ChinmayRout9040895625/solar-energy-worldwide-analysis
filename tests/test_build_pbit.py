@@ -89,10 +89,13 @@ def test_layout_keeps_the_skeleton_top_level_shape(built):
     skeleton = json.loads(read_part(SKELETON, "Report/Layout"))
     layout = json.loads(read_part(built, "Report/Layout"))
     assert set(layout.keys()) == set(skeleton.keys())
-    # config is copied unchanged; only sections are filled in.
-    assert layout["config"] == skeleton["config"]
     assert layout["layoutOptimization"] == skeleton["layoutOptimization"]
     assert skeleton["sections"] == []
+    # config is the skeleton's, plus an explicit opening page.
+    before = json.loads(skeleton["config"])
+    after = json.loads(layout["config"])
+    assert after["activeSectionIndex"] == 0
+    assert {k: v for k, v in after.items() if k != "activeSectionIndex"} == before
 
 
 def test_three_pages_are_injected(built):
@@ -227,3 +230,24 @@ def test_main_returns_zero_on_success(tmp_path):
 
 def test_main_returns_one_on_failure(tmp_path):
     assert main([str(DATA), str(tmp_path / "x.pbit"), str(tmp_path / "absent.pbit")]) == 1
+
+
+def test_bar_charts_sort_descending_by_their_measure(built):
+    """Without an OrderBy, Power BI sorts the category alphabetically; the
+    spec wants ROI by city ranked."""
+    sorted_bars = 0
+    for section in json.loads(read_part(built, "Report/Layout"))["sections"]:
+        for visual in section["visualContainers"]:
+            config = json.loads(visual["config"])
+            if config["singleVisual"]["visualType"] != "clusteredBarChart":
+                continue
+            sorted_bars += 1
+            order = config["singleVisual"]["prototypeQuery"]["OrderBy"]
+            assert order[0]["Direction"] == 2, config["name"]
+            measure = order[0]["Expression"]["Measure"]["Property"]
+            marked = [
+                s for s in json.loads(visual["dataTransforms"])["selects"]
+                if s.get("sort") == 2
+            ]
+            assert len(marked) == 1 and marked[0]["queryName"].endswith(measure)
+    assert sorted_bars >= 6

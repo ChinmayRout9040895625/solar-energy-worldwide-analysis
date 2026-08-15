@@ -102,37 +102,40 @@ python -m analysis.render_readme_charts  # JSON -> the chart block above
 
 ## Power BI
 
-`python -m analysis.build_powerbi` writes a Power BI Desktop project; open
-`output/powerbi/SolarEnergyWorldwide.pbip`.
+```bash
+python -m analysis.build_pbit     # -> output/powerbi/SolarEnergyWorldwide.pbit
+```
 
-**Enable the PBIR preview feature first**, or the report will not load:
-File > Options and settings > Options > Preview features >
-*Store reports using enhanced metadata format (PBIR)*.
+Double-click the `.pbit`. It opens with data loaded — no preview features, no
+manual refresh — and lands on the financial page.
 
-It emits **TMSL** (`model.bim`) for the model and **PBIR** (the `definition/`
-folder) for the report. An earlier attempt used PBIR-Legacy (`report.json`) and
-opened to a blank canvas: Microsoft documents that file as one that "doesn't
-support external editing", so Desktop discards a layout it did not write itself.
-PBIR is the format built for external authoring — every file carries a public
-JSON schema and Desktop names the offending file if one is malformed.
+**It needs a skeleton template, once.** In Power BI Desktop open the project (or
+any file carrying the model) and do *File > Export > Power BI template*, saving
+it as `SolarEnergyWorldwide.pbit` in the repo root. The build copies every part
+of that file byte for byte and swaps only `Report/Layout`. Re-export it whenever
+the model changes, because the skeleton — not `data.json` — supplies the model.
 
-The 48 rows are embedded in the model as a literal M `#table` rather than read
-from the CSV. A file path inside a Power BI query is absolute, so a project
-pointing at this machine's CSV would break the moment it moved — the same
-self-containment rule the HTML dashboard follows.
+Two things this had to learn the hard way, both in `docs/DECISIONS.md`:
 
-The DAX mirrors `analysis/metrics.py`: payback bands at the same 7 / 9 boundaries,
-dense regional ROI rank, and production consistency that returns BLANK under three
-cities instead of a misleading 1.00. Nothing executes DAX at build time, so those
-expressions are translations rather than verified computations — the build prints
-the figures to check against:
+- `SecurityBindings` binds to the package contents. Rewriting any part
+  invalidates it and Desktop reports *"This file is corrupted or was created by
+  an unrecognized version"*, which sounds like a version problem and is not. The
+  build drops that part and its `Content_Types` override.
+- A visual needs `query` and `dataTransforms` beside its `config`. With `config`
+  alone it renders nothing — the original blank-report bug.
 
-| Where | Should read |
+Verified on screen against `output/data.json`:
+
+| Where | Reads |
 |---|---|
-| Cities / CO₂ / installations cards | 48 · 208.35 t · 2,328,540 |
-| Payback risk | Low 5 · Medium 19 · High 24 |
-| Regional ROI Rank = 1 | Middle East |
-| Asia CO₂ | 54.72 — includes Dubai |
+| Cards | 48 cities · 208.35 t CO₂ · 2M installations · 10.86% mean ROI |
+| ROI by city | Phoenix, **Dubai**, Cairo, Los Angeles, Tel Aviv … |
+| Mean ROI by region | Middle East, Africa, Oceania, North America, Asia, South America |
+| Installations by region | Asia 1.47M → Middle East 920 |
+
+DAX mirrors `analysis/metrics.py`: payback bands at the same 7 / 9 boundaries,
+dense regional ROI rank, and production consistency returning BLANK under three
+cities rather than a misleading 1.00.
 
 Every build fails loud: a missing file, an unexpected column, a null, a rollup
 that does not reconcile, an external reference in the emitted HTML, or a missing
