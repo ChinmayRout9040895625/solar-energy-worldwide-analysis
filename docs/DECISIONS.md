@@ -158,3 +158,38 @@ Lesson recorded because it generalises: "the older format is safer" was an
 assumption about compatibility that ignored a documented statement about
 supportability. The format designed for the job beat the format that merely
 looked more established.
+
+## 2026-08-13 — .pbit attempt abandoned; findings kept, code removed
+
+Third Power BI approach: generate a .pbit template, chosen because it needs no
+preview toggle and refreshes on open. Power BI Desktop rejected it with "This
+file is corrupted or was created by an unrecognized version of Power BI
+Desktop" — a container-level rejection, before any JSON was read.
+
+The generator reached exact key parity with a real .pbix (part names, UTF-16LE
+without BOM, Content_Types overrides, and layout keys at all three levels) and
+still failed, so something structural in the OPC package is missing that cannot
+be inferred from a .pbix — a .pbix has DataModel where a .pbit has
+DataModelSchema, and no .pbit was available to compare against. Deleted the code
+rather than keep something that does not open.
+
+Worth keeping from it, because it explains the FIRST failure too: in the legacy
+Layout each visualContainer carries three sibling documents, not one —
+`config`, plus **`query`** (a SemanticQueryDataShapeCommand with a Binding) and
+**`dataTransforms`** (selects + projectionOrdering). A container with only
+`config` renders as nothing. Two shapes that look alike and are not: the query's
+Select uses `SourceRef.Source` (the From alias) while dataTransforms' expr uses
+`SourceRef.Entity` (the table name). Sections also need an integer `id` and an
+integer `displayOption`.
+
+Rule taken from three failures: do not author a Power BI report container from
+inference. Either use PBIR, which Microsoft documents for external authoring, or
+start from a real file of the exact same kind and modify it.
+
+## 2026-08-13 — The model half is proven; the report half is not
+
+Independently confirmed: `msmdsrv.exe` loaded the generated model at 542 MB and
+`Cities` appears in the Data pane, so model.bim, the embedded M table and the
+measures are all accepted by Desktop. Desktop also raises "Some of the tables
+have incomplete or no data" — a generated project has no cache.abf, so any
+route needs one Refresh before numbers appear.
