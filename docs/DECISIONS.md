@@ -193,3 +193,36 @@ Independently confirmed: `msmdsrv.exe` loaded the generated model at 542 MB and
 measures are all accepted by Desktop. Desktop also raises "Some of the tables
 have incomplete or no data" — a generated project has no cache.abf, so any
 route needs one Refresh before numbers appear.
+
+## 2026-08-13 — Power BI report solved: patch a Desktop-exported skeleton
+
+Working. The route that succeeded is not "generate a .pbit" but "take one
+Desktop exported and replace a single part".
+
+Two root causes, found by copying instead of inferring:
+
+1. **SecurityBindings binds to the package contents.** It is a DPAPI blob, and
+   rewriting any part invalidates it — Desktop then reports "This file is
+   corrupted or was created by an unrecognized version", which reads like a
+   format-version problem and is not. The fix is to DROP the part and its
+   Content_Types override, which is what every tool that recompiles a pbix/pbit
+   does. This was invisible from the .pbix reference because that file was never
+   modified.
+2. **Each visualContainer needs three sibling documents.** `config` alone
+   renders nothing; `query` (a SemanticQueryDataShapeCommand with a Binding)
+   and `dataTransforms` (selects + projectionOrdering) are required too. This
+   was the real cause of the very first blank report, misattributed at the time
+   to PBIR-Legacy being unreadable.
+
+`analysis/build_pbit.py` therefore copies every part of the skeleton byte for
+byte, drops SecurityBindings, and swaps Report/Layout. The skeleton carries the
+semantic model Desktop already accepted, so the model is never rebuilt either.
+Re-export the skeleton when the model changes.
+
+Verified on screen: Cities 48, CO2 208.35 t, Installations 2M, Mean ROI 10.86%
+— all matching output/data.json — with both slicers populated and the ROI,
+risk, regional-ROI and scatter visuals drawing real data.
+
+Cost of the lesson: three failed attempts, all of which inferred a proprietary
+format from documentation or an unrelated file. The one that worked started
+from a real artifact of the exact same kind.
