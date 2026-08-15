@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from analysis.build_pbit import (
     DEFAULT_SKELETON,
+    THEME_NAME,
     PbitBuildError,
     build,
     layout_for,
@@ -54,9 +55,21 @@ def test_security_bindings_are_dropped(built):
     assert "SecurityBindings" not in manifest
 
 
-def test_every_other_part_of_the_skeleton_survives(built):
+def test_every_part_of_the_skeleton_survives(built):
     with zipfile.ZipFile(SKELETON) as a, zipfile.ZipFile(built) as b:
         assert set(a.namelist()) - {"SecurityBindings"} == set(b.namelist())
+
+
+def test_the_theme_ships_beside_the_template(built):
+    """Embedding it had no effect twice; it is shipped for import instead."""
+    theme_file = built.parent / f"{THEME_NAME}.json"
+    assert theme_file.is_file()
+    theme = json.loads(theme_file.read_text(encoding="utf-8"))
+    assert theme["name"]
+    # Same validated colourblind-safe order the HTML dashboard uses, so the two
+    # deliverables read as one system.
+    assert theme["dataColors"][:3] == ["#2a78d6", "#eb6834", "#1baf7a"]
+    assert len(theme["dataColors"]) >= 7
 
 
 def test_only_the_layout_part_differs_from_the_skeleton(built):
@@ -197,8 +210,9 @@ def test_layout_part_is_utf16le_without_a_bom(built):
 
 
 def test_layout_for_is_pure(payload):
-    a = layout_for(payload, {"report": {}, "sections": [], "config": "{}", "layoutOptimization": 0})
-    b = layout_for(payload, {"report": {}, "sections": [], "config": "{}", "layoutOptimization": 0})
+    base = {"report": {}, "sections": [], "config": "{}", "layoutOptimization": 0}
+    a = layout_for(payload, dict(base))
+    b = layout_for(payload, dict(base))
     assert a == b
 
 
@@ -251,3 +265,26 @@ def test_bar_charts_sort_descending_by_their_measure(built):
             ]
             assert len(marked) == 1 and marked[0]["queryName"].endswith(measure)
     assert sorted_bars >= 6
+
+
+def test_charts_do_not_carry_subtotal(built):
+    for section in json.loads(read_part(built, "Report/Layout"))["sections"]:
+        for visual in section["visualContainers"]:
+            config = json.loads(visual["config"])
+            if config["singleVisual"]["visualType"] in ("tableEx", "pivotTable"):
+                continue
+            command = json.loads(visual["query"])["Commands"][0]["SemanticQueryDataShapeCommand"]
+            assert "Subtotal" not in command["Binding"]["Primary"]["Groupings"][0]
+
+
+def test_no_table_visuals_are_shipped(built):
+    """tableEx renders a header and no rows from a generated layout — three
+    attempts, including the Subtotal/Window binding copied from a working
+    table. Charts are shipped instead of a blank box."""
+    types = [
+        json.loads(v["config"])["singleVisual"]["visualType"]
+        for s in json.loads(read_part(built, "Report/Layout"))["sections"]
+        for v in s["visualContainers"]
+    ]
+    assert "tableEx" not in types
+    assert "pivotTable" not in types

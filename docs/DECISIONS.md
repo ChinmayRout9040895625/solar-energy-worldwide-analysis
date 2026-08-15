@@ -226,3 +226,34 @@ risk, regional-ROI and scatter visuals drawing real data.
 Cost of the lesson: three failed attempts, all of which inferred a proprietary
 format from documentation or an unrelated file. The one that worked started
 from a real artifact of the exact same kind.
+
+## 2026-08-13 — Power BI theme ships beside the template, not inside it
+
+Wrote a custom theme (`analysis/dashboard_assets/powerbi_theme.json`) reusing the
+same validated colourblind-safe palette as the HTML dashboard, so the two
+deliverables read as one system.
+
+Embedding it in the .pbit failed twice — once as a RegisteredResources package
+with `themeCollection.customTheme`, once as SharedResources/BaseThemes with
+`themeCollection.baseTheme`, the latter copied verbatim from a real .pbix that
+ships a theme. Both loaded without error and without effect. Stopped there
+rather than guess a third shape, which is the exact mistake this project already
+made three times over the container format.
+
+The theme is written to `output/powerbi/SolarEditorial.json` and imported in
+Desktop (View > Themes > Browse for themes). Once imported it is captured by the
+next skeleton export, after which every build carries it — the same mechanism
+that already supplies the model.
+
+## 2026-08-13 — No table visual in the generated report
+
+`tableEx` renders its header and no rows from a generated layout. Three
+attempts: plain binding, then a Window data reduction, then `Subtotal: 1` plus
+`queryMetadata` and `visualElements` — the last two lifted verbatim from a
+working tableEx in a real .pbix. Charts, cards, slicers and scatters all render
+from the same code path, so the defect is specific to the table binding.
+
+Shipped charts in its place: a blank box is worse than a different working
+visual. If the row-level detail is wanted, insert a Table visual in Desktop and
+drag Region, Country and City onto it — about ten seconds, and it then survives
+in the skeleton.

@@ -52,6 +52,12 @@ LAYOUT_PART = "Report/Layout"
 SECURITY_PART = "SecurityBindings"
 CONTENT_TYPES_PART = "[Content_Types].xml"
 
+THEME_NAME = "SolarEditorial"
+THEME_SOURCE = Path(__file__).resolve().parent / "dashboard_assets" / "powerbi_theme.json"
+# Structure copied from a real .pbix that ships its theme, not inferred:
+# a SharedResources package (type 2) pointing at BaseThemes/<name>.json.
+THEME_PART = f"Report/StaticResources/SharedResources/BaseThemes/{THEME_NAME}.json"
+
 
 def _drop_security_override(raw: bytes) -> bytes:
     """Remove the SecurityBindings entry from the Content_Types manifest."""
@@ -147,12 +153,24 @@ def _visual(
         },
     }
 
+    # Both settings copied from a real tableEx: tables page rows through a
+    # Window and their grouping carries Subtotal, where charts take a Top-N
+    # slice. Without Subtotal the table renders its header and nothing else.
+    is_table = visual_type in ("tableEx", "pivotTable")
+    grouping = {"Projections": list(range(len(selects)))}
+    if is_table:
+        grouping["Subtotal"] = 1
+    reduction = (
+        {"DataVolume": 3, "Primary": {"Window": {"Count": 500}}}
+        if is_table
+        else {"DataVolume": 4, "Primary": {"Top": {"Count": 1000}}}
+    )
     command = {
         "SemanticQueryDataShapeCommand": {
             "Query": query,
             "Binding": {
-                "Primary": {"Groupings": [{"Projections": list(range(len(selects)))}]},
-                "DataReduction": {"DataVolume": 4, "Primary": {"Top": {}}},
+                "Primary": {"Groupings": [grouping]},
+                "DataReduction": reduction,
                 "Version": 1,
             },
             "ExecutionMetricsKind": 1,
@@ -181,7 +199,13 @@ def _visual(
     transforms = {
         "objects": {},
         "projectionOrdering": ordering,
+        "queryMetadata": {
+            "Select": [
+                {"Restatement": prop, "Name": f"{ENTITY}.{prop}"} for _r, _k, prop in roles
+            ]
+        },
         "selects": transform_selects,
+        "visualElements": [{"DataRoles": [role for role, _k, _p in roles]}],
     }
 
     return {
@@ -252,13 +276,13 @@ def _page_sustainability() -> list[dict]:
         _card(248, 16, 220, 100, "Regions", "Regions"),
         _slicer(864, 16, 190, 100, "Region", "Region"),
         _slicer(1066, 16, 190, 100, "Payback Risk Band", "Payback risk"),
-        _visual("tableEx", 16, 128, 500, 560, "Region, country and city", [
-            ("Values", "Column", "Region"),
-            ("Values", "Column", "Country"),
-            ("Values", "Column", "City"),
-            ("Values", "Measure", "Total CO2 Tons"),
-            ("Values", "Measure", "Total Installations"),
-        ]),
+        # A tableEx was tried here three times and rendered its header with no
+        # rows every time, including with the Subtotal and Window binding copied
+        # from a working table. Rather than ship a blank box, the region
+        # breakdown is charted. Add a table by hand if the row detail is wanted:
+        # insert a Table visual and drag Region, Country, City onto it.
+        _bar(16, 128, 500, 270, "CO2 avoided by region", "Region", "Total CO2 Tons"),
+        _bar(16, 410, 500, 278, "Installations by region", "Region", "Total Installations"),
         _bar(528, 128, 728, 270, "CO2 avoided by country", "Country", "Total CO2 Tons"),
         _bar(528, 410, 356, 278, "Installations by country", "Country", "Total Installations"),
         _scatter(896, 410, 360, 278, "CO2 vs installations",
@@ -302,9 +326,9 @@ def layout_for(payload: dict, skeleton_layout: dict) -> dict:
 
     layout = dict(skeleton_layout)
     layout["sections"] = sections
-    # Open on the financial page. Without this the skeleton's config names no
-    # active section and Desktop picks one for itself.
+
     config = json.loads(layout.get("config") or "{}")
+    # Open on the financial page; otherwise Desktop picks one for itself.
     config["activeSectionIndex"] = 0
     layout["config"] = json.dumps(config)
     return layout
@@ -344,6 +368,19 @@ def build(data_path: Path, out_path: Path, skeleton_path: Path) -> Path:
 
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # The theme ships beside the template rather than inside it. Two attempts at
+    # embedding it (RegisteredResources and SharedResources/BaseThemes, the
+    # latter copied from a real .pbix) both loaded without error and without
+    # effect, and guessing a third shape is the mistake this project already
+    # made three times. Importing the JSON in Desktop is the documented route,
+    # and once imported it is captured by the next skeleton export — after which
+    # every build carries it, exactly as the model does.
+    if THEME_SOURCE.is_file():
+        theme = THEME_SOURCE.read_text(encoding="utf-8")
+        json.loads(theme)  # fail loud on a malformed theme rather than ship it
+        (out_path.parent / f"{THEME_NAME}.json").write_text(theme, encoding="utf-8")
+
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
         for info, raw in parts:
             name = info.filename
