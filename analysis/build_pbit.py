@@ -335,20 +335,24 @@ def _page_production() -> list[dict]:
 
 def _page_sustainability() -> list[dict]:
     return [
-        _card(16, 16, 220, 100, "Total CO2 Tons", "CO2 avoided t/yr"),
-        _card(248, 16, 220, 100, "Regions", "Regions"),
-        _slicer(864, 16, 190, 100, "Region", "Region"),
-        _slicer(1066, 16, 190, 100, "Payback Risk Band", "Payback risk"),
+        _card(16, 16, 200, 100, "Total CO2 Tons", "CO2 avoided t/yr"),
+        _card(228, 16, 200, 100, "Regions", "Regions"),
+        _card(440, 16, 200, 100, "Total Installations", "Installations"),
+        _card(652, 16, 200, 100, "Cities", "Cities"),
+        # Same 240px height as the other pages; at 100px the lists clipped.
+        _slicer(864, 16, 190, 240, "Region", "Region"),
+        _slicer(1066, 16, 190, 240, "Payback Risk Band", "Payback risk"),
         # A tableEx was tried here three times and rendered its header with no
         # rows every time, including with the Subtotal and Window binding copied
         # from a working table. Rather than ship a blank box, the region
         # breakdown is charted. Add a table by hand if the row detail is wanted:
         # insert a Table visual and drag Region, Country, City onto it.
-        _bar(16, 128, 500, 270, "CO2 avoided by region", "Region", "Total CO2 Tons", GREEN),
-        _bar(16, 410, 500, 278, "Installations by region", "Region", "Total Installations"),
-        _bar(528, 128, 728, 270, "CO2 avoided by country", "Country", "Total CO2 Tons", GREEN),
-        _bar(528, 410, 356, 278, "Installations by country", "Country", "Total Installations"),
-        _scatter(896, 410, 360, 278, "CO2 vs installations",
+        # Mirrors the other two pages: tall left chart, two stacked in the
+        # middle, slicers over a scatter on the right.
+        _bar(16, 128, 500, 560, "CO2 avoided by country", "Country", "Total CO2 Tons", GREEN),
+        _bar(528, 128, 320, 270, "CO2 avoided by region", "Region", "Total CO2 Tons", GREEN),
+        _bar(528, 410, 320, 278, "Installations by region", "Region", "Total Installations"),
+        _scatter(864, 268, 392, 420, "CO2 vs installations",
                  "City", "Total Installations", "Total CO2 Tons", VIOLET),
     ]
 
