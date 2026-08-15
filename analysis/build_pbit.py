@@ -83,6 +83,40 @@ def read_part(pbit: Path, name: str) -> str:
 
 # --- visuals ----------------------------------------------------------------
 
+# The HTML dashboard's validated colourblind-safe slots, so the two
+# deliverables read as one system.
+BLUE = "#2a78d6"
+ORANGE = "#eb6834"
+AQUA = "#1baf7a"
+GREEN = "#008300"
+VIOLET = "#4a3aa7"
+CRITICAL = "#d03b3b"
+
+SURFACE = "#FFFFFF"      # card face
+PLANE = "#F4F3EF"        # page behind the cards
+HAIRLINE = "#E1E0D9"     # card edge
+INK = "#0B0B0B"
+MUTED = "#898781"
+
+
+def _literal(value: str) -> dict:
+    return {"expr": {"Literal": {"Value": value}}}
+
+
+def _color(hex_value: str) -> dict:
+    """A solid fill, in the expr/Literal shape Power BI uses for properties."""
+    return {"solid": {"color": {"expr": {"Literal": {"Value": f"'{hex_value}'"}}}}}
+
+
+def _objects(color: str | None, extra: dict | None) -> dict:
+    merged: dict = {}
+    if color:
+        merged["dataPoint"] = [{"properties": {"fill": _color(color)}}]
+    if extra:
+        merged.update(extra)
+    return merged
+
+
 def _select(kind: str, prop: str) -> dict:
     return {
         kind: {"Expression": {"SourceRef": {"Source": ALIAS}}, "Property": prop},
@@ -100,6 +134,8 @@ def _visual(
     title: str,
     roles: list[tuple[str, str, str]],
     sort_by: str | None = None,
+    color: str | None = None,
+    objects: dict | None = None,
 ) -> dict:
     """One visualContainer. `roles` is [(role, kind, property), ...] in order.
 
@@ -141,14 +177,33 @@ def _visual(
             "projections": projections,
             "prototypeQuery": query,
             "drillFilterOtherVisuals": True,
-            "objects": {},
+            # Styling goes on the visual itself rather than through a theme:
+            # two attempts at embedding a theme JSON loaded without effect,
+            # while this `objects` channel is proven — the titles below render
+            # through the same expr/Literal shape.
+            "objects": _objects(color, objects),
             "vcObjects": {
                 "title": [{
                     "properties": {
-                        "show": {"expr": {"Literal": {"Value": "true"}}},
-                        "text": {"expr": {"Literal": {"Value": "'" + title.replace("'", "") + "'"}}},
+                        "show": _literal("true"),
+                        "text": _literal("'" + title.replace("'", "") + "'"),
+                        "fontColor": _color(MUTED),
+                        "fontSize": _literal("10D"),
+                        "alignment": _literal("'left'"),
+                        "background": _color(SURFACE),
                     }
-                }]
+                }],
+                # A white card on a warm plane, edged with a hairline rather
+                # than a drop shadow.
+                "background": [{
+                    "properties": {"show": _literal("true"), "color": _color(SURFACE),
+                                   "transparency": _literal("0D")}
+                }],
+                "border": [{
+                    "properties": {"show": _literal("true"), "color": _color(HAIRLINE),
+                                   "radius": _literal("8D")}
+                }],
+                "dropShadow": [{"properties": {"show": _literal("false")}}],
             },
         },
     }
@@ -218,26 +273,31 @@ def _visual(
 
 
 def _card(x, y, w, h, measure, title):
-    return _visual("card", x, y, w, h, title, [("Values", "Measure", measure)])
+    return _visual("card", x, y, w, h, title, [("Values", "Measure", measure)], objects={
+        "labels": [{"properties": {"color": _color(INK), "fontSize": _literal("30D"),
+                                   "fontFamily": _literal("'Segoe UI Bold'")}}],
+        "categoryLabels": [{"properties": {"show": _literal("true"), "color": _color(MUTED),
+                                           "fontSize": _literal("9D")}}],
+    })
 
 
 def _slicer(x, y, w, h, column, title):
     return _visual("slicer", x, y, w, h, title, [("Values", "Column", column)])
 
 
-def _bar(x, y, w, h, title, category, measure):
+def _bar(x, y, w, h, title, category, measure, color=BLUE):
     return _visual("clusteredBarChart", x, y, w, h, title, [
         ("Category", "Column", category),
         ("Y", "Measure", measure),
-    ], sort_by=measure)
+    ], sort_by=measure, color=color)
 
 
-def _scatter(x, y, w, h, title, detail, xm, ym):
+def _scatter(x, y, w, h, title, detail, xm, ym, color=BLUE):
     return _visual("scatterChart", x, y, w, h, title, [
         ("Category", "Column", detail),
         ("X", "Measure", xm),
         ("Y", "Measure", ym),
-    ])
+    ], color=color)
 
 
 def _page_financial() -> list[dict]:
@@ -249,8 +309,9 @@ def _page_financial() -> list[dict]:
         _slicer(864, 16, 190, 240, "Region", "Region"),
         _slicer(1066, 16, 190, 240, "Payback Risk Band", "Payback risk"),
         _bar(16, 128, 500, 560, "ROI by city", "City", "Mean ROI %"),
-        _bar(528, 128, 320, 270, "Cities at high payback risk", "Region", "Cities High Risk"),
-        _bar(528, 410, 320, 278, "Mean ROI by region", "Region", "Mean ROI %"),
+        _bar(528, 128, 320, 270, "Cities at high payback risk", "Region",
+             "Cities High Risk", CRITICAL),
+        _bar(528, 410, 320, 278, "Mean ROI by region", "Region", "Mean ROI %", AQUA),
         _scatter(864, 268, 392, 420, "Installations vs ROI",
                  "City", "Total Installations", "Mean ROI %"),
     ]
@@ -262,11 +323,13 @@ def _page_production() -> list[dict]:
         _card(248, 16, 220, 100, "Mean Production kWh", "Mean per city"),
         _slicer(864, 16, 190, 240, "Region", "Region"),
         _slicer(1066, 16, 190, 240, "Payback Risk Band", "Payback risk"),
-        _bar(16, 128, 420, 560, "Mean production by country", "Country", "Mean Production kWh"),
+        _bar(16, 128, 420, 560, "Mean production by country", "Country",
+             "Mean Production kWh", AQUA),
         _bar(448, 128, 400, 270, "Installations by region", "Region", "Total Installations"),
-        _bar(448, 410, 400, 278, "Production consistency", "Region", "Production Consistency"),
+        _bar(448, 410, 400, 278, "Production consistency", "Region",
+             "Production Consistency", ORANGE),
         _scatter(864, 268, 392, 420, "Production vs ROI",
-                 "City", "Mean Production kWh", "Mean ROI %"),
+                 "City", "Mean Production kWh", "Mean ROI %", AQUA),
     ]
 
 
@@ -281,12 +344,12 @@ def _page_sustainability() -> list[dict]:
         # from a working table. Rather than ship a blank box, the region
         # breakdown is charted. Add a table by hand if the row detail is wanted:
         # insert a Table visual and drag Region, Country, City onto it.
-        _bar(16, 128, 500, 270, "CO2 avoided by region", "Region", "Total CO2 Tons"),
+        _bar(16, 128, 500, 270, "CO2 avoided by region", "Region", "Total CO2 Tons", GREEN),
         _bar(16, 410, 500, 278, "Installations by region", "Region", "Total Installations"),
-        _bar(528, 128, 728, 270, "CO2 avoided by country", "Country", "Total CO2 Tons"),
+        _bar(528, 128, 728, 270, "CO2 avoided by country", "Country", "Total CO2 Tons", GREEN),
         _bar(528, 410, 356, 278, "Installations by country", "Country", "Total Installations"),
         _scatter(896, 410, 360, 278, "CO2 vs installations",
-                 "City", "Total Installations", "Total CO2 Tons"),
+                 "City", "Total Installations", "Total CO2 Tons", VIOLET),
     ]
 
 
@@ -317,7 +380,16 @@ def layout_for(payload: dict, skeleton_layout: dict) -> dict:
             "displayName": page["display"],
             "filters": "[]",
             "ordinal": ordinal,
-            "config": "{}",
+            "config": json.dumps({
+                "objects": {
+                    "background": [{
+                        "properties": {"color": _color(PLANE), "transparency": _literal("0D")}
+                    }],
+                    "outspace": [{
+                        "properties": {"color": _color(PLANE), "transparency": _literal("0D")}
+                    }],
+                }
+            }),
             "displayOption": 1,
             "width": CANVAS_WIDTH,
             "height": CANVAS_HEIGHT,

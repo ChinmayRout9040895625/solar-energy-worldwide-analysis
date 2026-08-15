@@ -257,3 +257,24 @@ Shipped charts in its place: a blank box is worse than a different working
 visual. If the row-level detail is wanted, insert a Table visual in Desktop and
 drag Region, Country and City onto it — about ten seconds, and it then survives
 in the skeleton.
+
+## 2026-08-13 — Styling applied per visual, not via a theme
+
+The theme JSON could not be made to take effect from inside the .pbit (two
+shapes tried, both loaded silently doing nothing). Styling is therefore written
+onto each visual through the `objects` / `vcObjects` channel in its config —
+the same expr/Literal mechanism the visual titles already rendered through, so
+this was demonstrated rather than assumed before being relied on.
+
+What that buys over a theme: it is generated, version-controlled and
+reproducible. `python -m analysis.build_pbit` reproduces the exact look with no
+manual import, and no step that can be forgotten.
+
+Applied: white card surfaces on a warm #F4F3EF plane, #E1E0D9 hairline borders
+at 8px radius, no drop shadows, muted 10px left-aligned titles, 30px ink KPI
+values with muted captions, and mark colours from the HTML dashboard's
+validated palette — blue for ROI, critical red for payback risk, aqua and green
+for regional and sustainability measures.
+
+`analysis/dashboard_assets/powerbi_theme.json` is kept and still shipped to
+output/. It is now optional: import it only to make hand-added visuals match.
